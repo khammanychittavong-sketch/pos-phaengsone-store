@@ -1,70 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-// === ຂໍ້ມູນຈຳລອງ (Mock Data) ===
-const mockProducts = [
-  { id: '1', code: 'P001', name: 'Alisa Detox Tea', qty: 50, price: 85000, cost: 50000 },
-  { id: '2', code: 'P002', name: 'Alisa Green Tea', qty: 30, price: 85000, cost: 50000 },
-  { id: '3', code: 'P003', name: 'ຄໍລາເຈນ VIP', qty: 15, price: 150000, cost: 100000 },
-];
-
-const mockCustomers = [
-  { id: 'C01', name: 'ລູກຄ້າທົ່ວໄປ', phone: '-' },
-  { id: 'C02', name: 'ນາງ ສົມສີ', phone: '020 5555 6666' },
-];
-
 export default function POSSystem() {
-  // === State ຫຼັກຂອງລະບົບ ===
   const [activeTab, setActiveTab] = useState('pos');
   const [shopName, setShopName] = useState('ຮ້ານ ແພງສອນ online');
   const [logoUrl, setLogoUrl] = useState('');
   
-  // === State ໂລໂກ້ & ທີມ ===
+  // ປ່ຽນສີຂອບໂລໂກ້ທຸກໆ 10 ວິນາທີ
   const [borderColor, setBorderColor] = useState('#00f5d4');
   const borderColors = ['#00f5d4', '#f50057', '#00e676', '#ffea00', '#2979ff'];
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // === State ສຳລັບ POS ===
-  const [cart, setCart] = useState<any[]>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState(mockCustomers[0]);
-  const [payAmount, setPayAmount] = useState(0);
-
-  // === ປ່ຽນສີຂອບໂລໂກ້ທຸກໆ 10 ວິນາທີ ===
   useEffect(() => {
-    let colorIndex = 0;
+    let index = 0;
     const interval = setInterval(() => {
-      colorIndex = (colorIndex + 1) % borderColors.length;
-      setBorderColor(borderColors[colorIndex]);
+      index = (index + 1) % borderColors.length;
+      setBorderColor(borderColors[index]);
     }, 10000);
     return () => clearInterval(interval);
   }, []);
 
-  // === ຈັດການ ຄີລັດ (Keyboard Shortcuts) ສຳລັບໜ້າ POS ===
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (activeTab !== 'pos') return;
-      
-      const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-      
-      // กด Spacebar = ຮັບເງິນພໍດີ
-      if (e.code === 'Space') {
-        e.preventDefault();
-        setPayAmount(total);
-      }
-      // กด Enter = ຊຳລະເງິນ
-      if (e.code === 'Enter') {
-        e.preventDefault();
-        if (payAmount >= total && total > 0) {
-          alert('✅ ຊຳລະເງິນສຳເລັດ! ບັນທຶກບິນແລ້ວ.');
-          setCart([]);
-          setPayAmount(0);
-        }
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeTab, cart, payAmount]);
-
-  // === ຟັງຊັນປ່ຽນໂລໂກ້ ===
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setLogoUrl(URL.createObjectURL(e.target.files[0]));
@@ -72,240 +26,212 @@ export default function POSSystem() {
   };
 
   return (
-    <div 
-      className="flex min-h-screen bg-[#0d1b2a] text-white" 
-      style={{ fontFamily: "'Phetsalart OT', sans-serif" }} // ໃຊ້ຟອນ Phetsalart OT
-    >
-      {/* ================= SIDEBAR ================= */}
-      <div className="w-64 bg-[#1b263b] p-4 flex flex-col justify-between border-r border-slate-700">
+    <div className="flex h-screen bg-[#0d1b2a] text-white font-sans overflow-hidden" style={{ fontFamily: "'Phetsalart OT', sans-serif" }}>
+      
+      {/* ================= SIDEBAR (ເມນູດ້ານຊ້າຍ) ================= */}
+      <div className="w-72 bg-[#1b263b] flex flex-col justify-between border-r border-slate-700 p-5 shadow-2xl">
         <div>
-          {/* Logo Section (ຄລິກເພື່ອປ່ຽນ) */}
-          <div className="flex flex-col items-center gap-3 mb-8 cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+          {/* Logo ຮ້ານ (ຄລິກເພື່ອປ່ຽນຮູບ + ປ່ຽນສີຂອບທຸກ 10 ວິນາທີ) */}
+          <div className="flex flex-col items-center gap-3 mb-8 cursor-pointer group" onClick={() => fileInputRef.current?.click()}>
             <div 
-              className="w-24 h-24 rounded-full flex items-center justify-center overflow-hidden transition-all duration-1000"
-              style={{ border: `4px solid ${borderColor}`, boxShadow: `0 0 15px ${borderColor}80` }}
+              className="w-20 h-20 rounded-full flex items-center justify-center overflow-hidden transition-all duration-1000 shadow-lg"
+              style={{ border: `4px solid ${borderColor}`, boxShadow: `0 0 20px ${borderColor}60` }}
             >
-              {logoUrl ? <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" /> : <span className="text-cyan-400 font-bold text-2xl">Logo</span>}
+              {logoUrl ? (
+                <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-cyan-400 font-bold text-lg">LOGO</span>
+              )}
             </div>
-            <span className="font-bold text-lg text-center">{shopName}</span>
+            <h2 className="font-bold text-base text-center text-cyan-200 tracking-wide">{shopName}</h2>
             <input type="file" accept="image/*" ref={fileInputRef} onChange={handleLogoUpload} className="hidden" />
           </div>
 
-          {/* Menu */}
+          {/* เมນູຊ້າຍ */}
           <nav className="space-y-2">
-            <button onClick={() => setActiveTab('dashboard')} className={`w-full text-left px-4 py-3 rounded ${activeTab === 'dashboard' ? 'bg-cyan-600/30 text-cyan-400' : 'hover:bg-slate-700'}`}>🏠 ໜ້າຫຼັກ (Dashboard)</button>
-            <button onClick={() => setActiveTab('pos')} className={`w-full text-left px-4 py-3 rounded ${activeTab === 'pos' ? 'bg-cyan-600/30 text-cyan-400' : 'hover:bg-slate-700'}`}>🛒 ຂາຍສິນຄ້າ (POS)</button>
-            <button onClick={() => setActiveTab('admin')} className={`w-full text-left px-4 py-3 rounded ${activeTab === 'admin' ? 'bg-cyan-600/30 text-cyan-400' : 'hover:bg-slate-700'}`}>⚙️ ຈັດການລະບົບ (Admin)</button>
-            <button onClick={() => setActiveTab('reports')} className={`w-full text-left px-4 py-3 rounded ${activeTab === 'reports' ? 'bg-cyan-600/30 text-cyan-400' : 'hover:bg-slate-700'}`}>📊 ລາຍງານຍອດຂາຍ</button>
+            <button 
+              onClick={() => setActiveTab('dashboard')} 
+              className={`w-full text-left px-4 py-3 rounded-xl font-medium transition flex items-center gap-3 ${activeTab === 'dashboard' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}
+            >
+              📊 1. ໜ້າຫຼັກ Dashboard
+            </button>
+            <button 
+              onClick={() => setActiveTab('pos')} 
+              className={`w-full text-left px-4 py-3 rounded-xl font-medium transition flex items-center gap-3 ${activeTab === 'pos' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}
+            >
+              🛒 2. ໜ້າຂາຍສິນຄ້າ POS
+            </button>
+            <button 
+              onClick={() => setActiveTab('admin')} 
+              className={`w-full text-left px-4 py-3 rounded-xl font-medium transition flex items-center gap-3 ${activeTab === 'admin' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}
+            >
+              ⚙️ 3. ຈັດການລະບົບ (Admin)
+            </button>
+            <button 
+              onClick={() => setActiveTab('reports')} 
+              className={`w-full text-left px-4 py-3 rounded-xl font-medium transition flex items-center gap-3 ${activeTab === 'reports' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-md' : 'text-slate-300 hover:bg-slate-800'}`}
+            >
+              📈 4. ລາຍງານຍອດຂາຍ
+            </button>
           </nav>
+        </div>
+
+        <div className="text-xs text-slate-500 text-center border-t border-slate-700/50 pt-3">
+          POS System v2.0 • ຮ້ານ ແພງສອນ online
         </div>
       </div>
 
-      {/* ================= MAIN CONTENT ================= */}
-      <div className="flex-1 p-6 overflow-y-auto h-screen">
+      {/* ================= CONTENT AREA (ເນື້ອຫາດ້ານຂວາ) ================= */}
+      <div className="flex-1 p-8 overflow-y-auto">
         
-        {/* 1. ໜ້າຫຼັກ DASHBOARD */}
+        {/* --- 1. DASHBOARD --- */}
         {activeTab === 'dashboard' && (
-          <div className="space-y-6">
-            <h1 className="text-2xl font-bold text-cyan-300 mb-4">🏠 ພາບລວມລະບົບ (Dashboard)</h1>
+          <div className="space-y-6 max-w-6xl mx-auto">
+            <h1 className="text-2xl font-bold text-cyan-300 mb-2">ພາບລວມລະບົບ (Dashboard)</h1>
             
-            <div className="grid grid-cols-4 gap-4">
-              <div className="bg-[#1b263b] p-4 rounded-xl border border-slate-700">
-                <p className="text-sm text-slate-400">ຄັງສິນຄ້າລວມ</p><p className="text-2xl font-bold">95 ລາຍການ</p>
+            <div className="grid grid-cols-3 gap-6">
+              <div className="bg-[#1b263b] p-6 rounded-2xl border border-slate-700 shadow-xl">
+                <p className="text-sm text-slate-400 font-medium">ຄັງສິນຄ້າລວມ (ລາຍການ)</p>
+                <p className="text-3xl font-extrabold text-white mt-2">12 ປະເພດ</p>
               </div>
-              <div className="bg-[#1b263b] p-4 rounded-xl border border-slate-700">
-                <p className="text-sm text-slate-400">ຍອດຂາຍລວມ</p><p className="text-2xl font-bold text-emerald-400">₭2,500,000</p>
+              <div className="bg-[#1b263b] p-6 rounded-2xl border border-slate-700 shadow-xl">
+                <p className="text-sm text-slate-400 font-medium">ຍອດຂາຍລວມທັງໝົດ</p>
+                <p className="text-3xl font-extrabold text-emerald-400 mt-2">₭2,500,000</p>
               </div>
-              <div className="bg-[#1b263b] p-4 rounded-xl border border-slate-700">
-                <p className="text-sm text-slate-400">ຈຳນວນສະມາຊິກ</p><p className="text-2xl font-bold text-amber-400">128 ຄົນ</p>
-              </div>
-              <div className="bg-[#1b263b] p-4 rounded-xl border border-slate-700">
-                <p className="text-sm text-slate-400">ມູນຄ່າຕົ້ນທຶນສິນຄ້າໃນຄັງ</p><p className="text-2xl font-bold text-rose-400">₭5,500,000</p>
+              <div className="bg-[#1b263b] p-6 rounded-2xl border border-slate-700 shadow-xl">
+                <p className="text-sm text-slate-400 font-medium">ຈຳນວນສະມາຊິກລູກຄ້າ</p>
+                <p className="text-3xl font-extrabold text-amber-400 mt-2">45 ຄົນ</p>
               </div>
             </div>
 
-            <div className="bg-[#1b263b] p-4 rounded-xl border border-amber-500/30">
-              <h2 className="text-amber-400 font-semibold mb-3">🏆 ຍອດຂາຍສະເພາະສິນຄ້າຂາຍດີ 3 ອັນດັບ</h2>
-              {/* Mockup Top 3 */}
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between bg-[#0d1b2a] p-2 rounded"><span>#1 Alisa Detox Tea</span><span className="text-cyan-400">₭1,360,000 (16 ຊຸດ)</span></div>
-                <div className="flex justify-between bg-[#0d1b2a] p-2 rounded"><span>#2 Alisa Green Tea</span><span className="text-cyan-400">₭1,020,000 (12 ຊຸດ)</span></div>
-                <div className="flex justify-between bg-[#0d1b2a] p-2 rounded"><span>#3 ຄໍລາເຈນ VIP</span><span className="text-cyan-400">₭450,000 (3 ຊຸດ)</span></div>
+            <div className="grid grid-cols-2 gap-6">
+              <div className="bg-[#1b263b] p-6 rounded-2xl border border-slate-700 shadow-xl">
+                <h3 className="text-amber-400 font-bold mb-4">🏆 3 ອັນດັບສິນຄ້າຂາຍດີ</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center bg-[#0d1b2a] p-3 rounded-xl border border-slate-800">
+                    <span>1. Alisa Detox Tea Herb</span>
+                    <span className="text-cyan-400 font-bold">16 ຊຸດ</span>
+                  </div>
+                  <div className="flex justify-between items-center bg-[#0d1b2a] p-3 rounded-xl border border-slate-800">
+                    <span>2. Alisa Green Tea Herb</span>
+                    <span className="text-cyan-400 font-bold">12 ຊຸດ</span>
+                  </div>
+                  <div className="flex justify-between items-center bg-[#0d1b2a] p-3 rounded-xl border border-slate-800">
+                    <span>3. ຄໍລາເຈນ VIP</span>
+                    <span className="text-cyan-400 font-bold">5 ຊຸດ</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-[#1b263b] p-6 rounded-2xl border border-slate-700 shadow-xl">
+                <h3 className="text-cyan-400 font-bold mb-4">💰 ມູນຄ່າສິນຄ້າໃນຄັງ</h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center border-b border-slate-700 pb-3">
+                    <span className="text-slate-400">ຕົ້ນທຶນສິນຄ້າລວມ:</span>
+                    <span className="text-xl font-bold text-rose-400">₭3,200,000</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400">ມູນຄ່າລາຄາຂາຍລວມ:</span>
+                    <span className="text-xl font-bold text-emerald-400">₭5,800,000</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* 2. ໜ້າຂາຍສິນຄ້າ POS */}
+        {/* --- 2. POS --- */}
         {activeTab === 'pos' && (
-          <div className="flex gap-4 h-full">
-            {/* ລາຍການສິນຄ້າທາງຊ້າຍ */}
+          <div className="flex gap-6 h-full max-w-7xl mx-auto pb-10">
             <div className="flex-[2] flex flex-col gap-4">
-              <input type="text" placeholder="🔍 ຄົ້ນຫາສິນຄ້າດ້ວຍ ID, ລະຫັດ, ຊື່ສິນຄ້າ..." className="w-full bg-[#1b263b] p-3 rounded-lg border border-slate-600 focus:outline-none focus:border-cyan-400" />
-              
-              <div className="grid grid-cols-3 gap-3 overflow-y-auto">
-                {mockProducts.map(p => (
-                  <div key={p.id} onClick={() => setCart([...cart, {...p, qty: 1}])} className="bg-[#1b263b] p-4 rounded-lg cursor-pointer hover:bg-slate-700 border border-slate-600">
-                    <p className="font-bold">{p.name}</p>
-                    <p className="text-sm text-slate-400">ລະຫັດ: {p.code}</p>
-                    <p className="text-cyan-400 font-bold mt-2">₭{p.price.toLocaleString()}</p>
+              <input 
+                type="text" 
+                placeholder="🔍 ຄົ້ນຫາສິນຄ້າ (ID, ລະຫັດ, ຊື່ສິນຄ້າ)..." 
+                className="w-full bg-[#1b263b] p-4 rounded-xl border border-slate-700 text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400 shadow-lg" 
+              />
+              <div className="grid grid-cols-3 gap-4 overflow-y-auto pr-2">
+                {[
+                  { id: '1', name: 'Alisa Detox Tea', price: 85000 },
+                  { id: '2', name: 'Alisa Green Tea', price: 85000 },
+                  { id: '3', name: 'ຄໍລາເຈນ VIP', price: 150000 }
+                ].map(p => (
+                  <div key={p.id} className="bg-[#1b263b] p-5 rounded-2xl border border-slate-700 hover:border-cyan-400 cursor-pointer transition shadow-lg flex flex-col justify-between h-32">
+                    <div>
+                      <h4 className="font-bold text-white">{p.name}</h4>
+                      <p className="text-xs text-slate-400 mt-1">ລະຫັດ: P00{p.id}</p>
+                    </div>
+                    <p className="text-cyan-400 font-extrabold text-lg">₭{p.price.toLocaleString()}</p>
                   </div>
                 ))}
               </div>
-              
-              <div className="bg-[#1b263b] p-3 rounded-lg border border-slate-600">
-                <p className="text-sm text-slate-400 mb-2">ປະຫວັດບິນລ່າສຸດ (1-4 ບິນເພື່ອກົດແກ້ໄຂ)</p>
-                <div className="flex gap-2">
-                  <button className="bg-[#0d1b2a] px-3 py-1 rounded text-xs">ບິນ #001</button>
-                  <button className="bg-[#0d1b2a] px-3 py-1 rounded text-xs">ບິນ #002</button>
-                </div>
-              </div>
             </div>
 
-            {/* ບິນຄິດເງິນທາງຂວາ */}
-            <div className="flex-[1] bg-[#1b263b] rounded-xl p-4 flex flex-col border border-slate-700">
-              <div className="mb-4">
-                <label className="text-xs text-slate-400">ລູກຄ້າ:</label>
-                <select className="w-full bg-[#0d1b2a] p-2 rounded text-sm mt-1 border border-slate-600">
-                  {mockCustomers.map(c => <option key={c.id}>{c.name} ({c.phone})</option>)}
-                </select>
+            <div className="flex-[1.2] bg-[#1b263b] p-6 rounded-2xl border border-slate-700 flex flex-col shadow-2xl">
+              <h3 className="font-bold text-lg mb-4 text-cyan-300">🛒 ບິນຂາຍສິນຄ້າ</h3>
+              <div className="flex-1 bg-[#0d1b2a] rounded-xl p-3 overflow-y-auto mb-4 border border-slate-800">
+                <p className="text-center text-slate-500 text-sm mt-20">ຍັງບໍ່ມີສິນຄ້າໃນກະຕ່າ</p>
               </div>
-
-              <div className="flex-1 overflow-y-auto bg-[#0d1b2a] rounded p-2 mb-4 space-y-2">
-                {cart.length === 0 ? <p className="text-center text-slate-500 mt-10">ຍັງບໍ່ມີສິນຄ້າໃນບິນ</p> : 
-                  cart.map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-center text-sm border-b border-slate-700 pb-2">
-                      <div>
-                        <p>{item.name}</p>
-                        <p className="text-slate-400">₭{item.price.toLocaleString()} x {item.qty}</p>
-                      </div>
-                      <div className="flex gap-2 items-center">
-                        <button className="bg-red-500/20 text-red-400 px-2 rounded">-</button>
-                        <span>{item.qty}</span>
-                        <button className="bg-green-500/20 text-green-400 px-2 rounded">+</button>
-                      </div>
-                    </div>
-                  ))
-                }
-              </div>
-
               <div className="space-y-3">
-                <div className="flex justify-between text-xl font-bold">
+                <div className="flex justify-between text-lg font-bold">
                   <span>ລວມເງິນ:</span>
-                  <span className="text-emerald-400">₭{cart.reduce((s, i) => s + (i.price * i.qty), 0).toLocaleString()}</span>
+                  <span className="text-emerald-400">₭0</span>
                 </div>
-                
-                <input 
-                  type="number" 
-                  value={payAmount || ''} 
-                  onChange={(e) => setPayAmount(Number(e.target.value))}
-                  placeholder="ຮັບເງິນມາ..." 
-                  className="w-full bg-[#0d1b2a] p-3 rounded text-lg border border-slate-600 text-center" 
-                />
-                
-                <div className="flex justify-between text-lg">
-                  <span>ເງິນທອນ:</span>
-                  <span className="text-rose-400">
-                    ₭{payAmount - cart.reduce((s, i) => s + (i.price * i.qty), 0) > 0 ? (payAmount - cart.reduce((s, i) => s + (i.price * i.qty), 0)).toLocaleString() : '0'}
-                  </span>
-                </div>
-
-                <p className="text-center text-xs text-slate-400">⌨️ ກົດ Spacebar = ຮັບເງິນພໍດີ | ກົດ Enter = ຊຳລະເງິນ</p>
-                
-                <div className="flex gap-2">
-                  <button className="flex-1 bg-cyan-600 hover:bg-cyan-700 py-3 rounded-lg font-bold">ຊຳລະເງິນ (Enter)</button>
-                  <button className="bg-slate-600 hover:bg-slate-500 px-4 py-3 rounded-lg font-bold">🖨️ ປີ້ນບິນ</button>
-                </div>
+                <button className="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-3.5 rounded-xl font-bold transition shadow-lg">
+                  ຊຳລະເງິນ (Enter)
+                </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* 3. ໜ້າ ADMIN */}
+        {/* --- 3. ADMIN --- */}
         {activeTab === 'admin' && (
-          <div className="space-y-6">
+          <div className="space-y-6 max-w-5xl mx-auto pb-10">
             <h1 className="text-2xl font-bold text-cyan-300">⚙️ ຈັດການລະບົບ (Admin)</h1>
-            
-            <div className="grid grid-cols-2 gap-6">
-              {/* Add Product Form */}
-              <div className="bg-[#1b263b] p-4 rounded-xl border border-slate-700">
-                <h2 className="font-bold mb-4 border-b border-slate-600 pb-2">📦 ເພີ່ມ/ແກ້ໄຂ ສິນຄ້າ</h2>
-                <div className="space-y-3 text-sm">
-                  <input type="text" placeholder="ID / ລະຫັດສິນຄ້າ" className="w-full bg-[#0d1b2a] p-2 rounded border border-slate-600" />
-                  <input type="text" placeholder="ຊື່ສິນຄ້າ" className="w-full bg-[#0d1b2a] p-2 rounded border border-slate-600" />
-                  <div className="grid grid-cols-2 gap-2">
-                    <input type="number" placeholder="ຕົ້ນທຶນ" className="bg-[#0d1b2a] p-2 rounded border border-slate-600" />
-                    <input type="number" placeholder="ຈຳນວນ (Qty)" className="bg-[#0d1b2a] p-2 rounded border border-slate-600" />
-                    <input type="number" placeholder="ລາຄາຍ່ອຍ" className="bg-[#0d1b2a] p-2 rounded border border-slate-600" />
-                    <input type="number" placeholder="ລາຄາໂປຣ" className="bg-[#0d1b2a] p-2 rounded border border-slate-600" />
-                    <input type="number" placeholder="ລາຄາຕົວແທນ" className="bg-[#0d1b2a] p-2 rounded border border-slate-600" />
-                  </div>
-                  <button className="w-full bg-emerald-600 py-2 rounded font-bold">ບັນທຶກສິນຄ້າ</button>
-                </div>
+            <div className="bg-[#1b263b] p-6 rounded-2xl border border-slate-700 shadow-xl space-y-4">
+              <h3 className="font-bold text-lg text-amber-400 border-b border-slate-700 pb-2">📦 ເພີ່ມສິນຄ້າໃໝ່</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <input type="text" placeholder="ID / ລະຫັດສິນຄ້າ" className="bg-[#0d1b2a] p-3 rounded-xl border border-slate-700 text-sm" />
+                <input type="text" placeholder="ຊື່ສິນຄ້າ" className="bg-[#0d1b2a] p-3 rounded-xl border border-slate-700 text-sm" />
+                <input type="number" placeholder="ຈຳນວນໃນຄັງ" className="bg-[#0d1b2a] p-3 rounded-xl border border-slate-700 text-sm" />
+                <input type="number" placeholder="ລາຄາຍ່ອຍ" className="bg-[#0d1b2a] p-3 rounded-xl border border-slate-700 text-sm" />
+                <input type="number" placeholder="ລາຄາໂປຣ" className="bg-[#0d1b2a] p-3 rounded-xl border border-slate-700 text-sm" />
+                <input type="number" placeholder="ລາຄາຕົວແທນ" className="bg-[#0d1b2a] p-3 rounded-xl border border-slate-700 text-sm" />
+                <input type="number" placeholder="ຕົ້ນທຶນ" className="bg-[#0d1b2a] p-3 rounded-xl border border-slate-700 text-sm" />
               </div>
-
-              {/* Add Customer & Settings */}
-              <div className="space-y-6">
-                <div className="bg-[#1b263b] p-4 rounded-xl border border-slate-700">
-                  <h2 className="font-bold mb-4 border-b border-slate-600 pb-2">👥 ເພີ່ມສະມາຊິກລູກຄ້າ</h2>
-                  <div className="space-y-3 text-sm">
-                    <input type="text" placeholder="ຊື່ລູກຄ້າ" className="w-full bg-[#0d1b2a] p-2 rounded border border-slate-600" />
-                    <input type="text" placeholder="ເບີໂທ" className="w-full bg-[#0d1b2a] p-2 rounded border border-slate-600" />
-                    <input type="text" placeholder="ທີ່ຢູ່" className="w-full bg-[#0d1b2a] p-2 rounded border border-slate-600" />
-                    <button className="w-full bg-blue-600 py-2 rounded font-bold">ບັນທຶກສະມາຊິກ</button>
-                  </div>
-                </div>
-
-                <div className="bg-[#1b263b] p-4 rounded-xl border border-slate-700">
-                  <h2 className="font-bold mb-4 border-b border-slate-600 pb-2">ຮ້ານ ແລະ ຄວາມປອດໄພ</h2>
-                  <div className="space-y-3 text-sm">
-                    <input type="text" value={shopName} onChange={(e) => setShopName(e.target.value)} placeholder="ປ່ຽນຊື່ຮ້ານ" className="w-full bg-[#0d1b2a] p-2 rounded border border-slate-600" />
-                    <input type="password" placeholder="ປ່ຽນລະຫັດເຂົ້າ Admin" className="w-full bg-[#0d1b2a] p-2 rounded border border-slate-600" />
-                    <div className="flex gap-2">
-                      <button className="flex-1 bg-amber-600 py-2 rounded font-bold">ລະບົບຮັບສິນຄ້າ</button>
-                      <button className="flex-1 bg-purple-600 py-2 rounded font-bold">ລະບົບໂອນສິນຄ້າ</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <button className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl font-bold transition shadow-lg">ບັນທຶກສິນຄ້າ</button>
             </div>
           </div>
         )}
 
-        {/* 4. ໜ້າ ລາຍງານ REPORTS */}
+        {/* --- 4. REPORTS --- */}
         {activeTab === 'reports' && (
-          <div className="space-y-6">
+          <div className="space-y-6 max-w-6xl mx-auto pb-10">
             <div className="flex justify-between items-center">
-              <h1 className="text-2xl font-bold text-cyan-300">📊 ລາຍງານຍອດຂາຍປະຈຳວັນ/ເດືອນ</h1>
-              <div className="flex gap-2">
-                <button className="bg-rose-600 px-4 py-2 rounded text-sm font-bold">📄 ໂຫຼດ PDF</button>
-                <button className="bg-emerald-600 px-4 py-2 rounded text-sm font-bold">📊 ໂຫຼດ EXCEL/CSV</button>
+              <h1 className="text-2xl font-bold text-cyan-300">📈 ລายງານຍອດຂາຍ</h1>
+              <div className="flex gap-3">
+                <button className="bg-rose-600 hover:bg-rose-500 px-4 py-2.5 rounded-xl font-bold text-sm shadow-lg transition">📄 ດາວໂຫລດ PDF</button>
+                <button className="bg-emerald-600 hover:bg-emerald-500 px-4 py-2.5 rounded-xl font-bold text-sm shadow-lg transition">📊 ດາວໂຫລດ EXCEL</button>
               </div>
             </div>
             
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-[#1b263b] p-6 rounded-xl border-2 border-emerald-500/50">
-                <p className="text-slate-400">ລາຍໄດ້ລວມ</p><p className="text-3xl font-bold text-emerald-400">₭8,500,000</p>
+            <div className="grid grid-cols-3 gap-6">
+              <div className="bg-[#1b263b] p-6 rounded-2xl border-2 border-emerald-500/50 shadow-xl">
+                <p className="text-slate-400 font-medium">ລາຍໄດ້ລວມ</p>
+                <p className="text-3xl font-extrabold text-emerald-400 mt-2">₭8,500,000</p>
               </div>
-              <div className="bg-[#1b263b] p-6 rounded-xl border-2 border-amber-500/50">
-                <p className="text-slate-400">ຕົ້ນທຶນ</p><p className="text-3xl font-bold text-amber-400">₭5,200,000</p>
+              <div className="bg-[#1b263b] p-6 rounded-2xl border-2 border-amber-500/50 shadow-xl">
+                <p className="text-slate-400 font-medium">ຕົ້ນທຶນລວມ</p>
+                <p className="text-3xl font-extrabold text-amber-400 mt-2">₭5,200,000</p>
               </div>
-              <div className="bg-[#1b263b] p-6 rounded-xl border-2 border-rose-500/50">
-                <p className="text-slate-400">ກຳໄລ</p><p className="text-3xl font-bold text-rose-400">₭3,300,000</p>
-              </div>
-            </div>
-
-            {/* Mockup Charts Area */}
-            <div className="grid grid-cols-2 gap-4 h-64">
-              <div className="bg-[#1b263b] rounded-xl border border-slate-700 flex items-center justify-center">
-                <p className="text-slate-500">📈 ພື້ນທີ່ສະແດງ ກຣາຟແທ່ງທຽນ (Candlestick/Bar)</p>
-              </div>
-              <div className="bg-[#1b263b] rounded-xl border border-slate-700 flex items-center justify-center">
-                <p className="text-slate-500">🍩 ພື້ນທີ່ສະແດງ ກຣາຟວົງກົມ (Donut Chart)</p>
+              <div className="bg-[#1b263b] p-6 rounded-2xl border-2 border-rose-500/50 shadow-xl">
+                <p className="text-slate-400 font-medium">ກຳໄລສຸດທິ</p>
+                <p className="text-3xl font-extrabold text-rose-400 mt-2">₭3,300,000</p>
               </div>
             </div>
           </div>
         )}
+
       </div>
     </div>
   );
