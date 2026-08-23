@@ -1,3 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'Phetsalart OT';
+  src: url('/fonts/PhetsalartOT.ttf') format('truetype');
+}
+
 :root {
   --primary-color: #0d1b2a;
   --sidebar-color: #1b263b;
@@ -10,7 +19,4 @@ body {
   background-color: var(--primary-color);
   color: var(--text-color);
   font-size: var(--font-base-size);
-}@font-face {
-  font-family: 'Phetsalart OT';
-  src: url('/fonts/PhetsalartOT.ttf') format('truetype');
 }
