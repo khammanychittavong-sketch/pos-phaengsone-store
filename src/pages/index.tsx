@@ -11,7 +11,6 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { Bar } from 'react-chartjs-2';
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -20,20 +19,17 @@ import {
   FileBarChart,
   Package,
   Users,
-  DollarSign,
-  TrendingUp,
+  Printer,
+  Search,
   Plus,
   Trash2,
   Edit,
-  Printer,
-  Download,
-  Search,
-  Tag,
-  Percent,
-  RefreshCw,
-  CheckCircle,
-  X,
-  CreditCard,
+  Save,
+  Clock,
+  PackagePlus,
+  UserCheck,
+  TrendingUp,
+  ArrowDownCircle,
 } from 'lucide-react';
 
 ChartJS.register(
@@ -52,8 +48,6 @@ interface Product {
   name: string;
   category: string;
   price: number;
-  promoPrice: number;
-  wholesalePrice: number;
   cost: number;
   stock: number;
 }
@@ -81,79 +75,140 @@ interface SaleRecord {
   totalAmount: number;
   totalCost: number;
   totalProfit: number;
-  memberId?: string;
   memberName?: string;
 }
 
+interface StockInLog {
+  id: string;
+  productId: string;
+  productName: string;
+  qtyAdded: number;
+  costPrice: number;
+  supplier: string;
+  date: string;
+}
+
 export default function POSPhengSone() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'pos' | 'admin' | 'settings' | 'reports'>('pos');
-  
-  // Customization & Shop Info
+  const [activeTab, setActiveTab] = useState<'pos' | 'dashboard' | 'stockin' | 'admin' | 'reports' | 'settings'>('pos');
+
+  // Shop Info & Customization
   const [shopName, setShopName] = useState('ຮ້ານ ແພງສອນ ຂາຍ Online');
-  const [logoUrl, setLogoUrl] = useState('https://via.placeholder.com/150/06b6d4/ffffff?text=PhengSone');
+  const [logoUrl, setLogoUrl] = useState('https://via.placeholder.com/200/06b6d4/ffffff?text=Logo');
   const [adminPassword, setAdminPassword] = useState('11222');
   const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
 
-  // Time & Date State
-  const [timeStr, setTimeStr] = useState('');
+  // Real-time Lao Clock
+  const [realTimeClock, setRealTimeClock] = useState('');
   const [laoDateStr, setLaoDateStr] = useState('');
 
-  // Categories
-  const categories = ['ທັງໝົດ', 'ເສື້ອ', 'ໂສ້ງ', 'ເກີບ', 'ອຸປະກອນ'];
+  // Dynamic Categories
+  const [categories, setCategories] = useState<string[]>(['ເສື້ອ', 'ໂສ້ງ', 'ເກີບ', 'ອຸປະກອນ']);
   const [selectedCategory, setSelectedCategory] = useState('ທັງໝົດ');
+  const [newCatInput, setNewCatInput] = useState('');
 
   // Data Stores
   const [products, setProducts] = useState<Product[]>([
-    { id: 'P001', name: 'ເສື້ອຢືດ A1 (ຂາວ)', category: 'ເສື້ອ', price: 85000, promoPrice: 75000, wholesalePrice: 65000, cost: 50000, stock: 45 },
-    { id: 'P002', name: 'ໂສ້ງຢີນ B2 (ດຳ)', category: 'ໂສ້ງ', price: 180000, promoPrice: 160000, wholesalePrice: 140000, cost: 110000, stock: 20 },
-    { id: 'P003', name: 'ເກີບຜ້າໃບ C3 (Sneaker)', category: 'ເກີບ', price: 250000, promoPrice: 230000, wholesalePrice: 200000, cost: 150000, stock: 8 },
+    { id: 'P001', name: 'Alisa Detox ສູ່ອງແດງ', category: 'ອຸປະກອນ', price: 64500, cost: 43000, stock: 15 },
+    { id: 'P002', name: 'Alisa Green Tea ສູ່ອງຂຽວ', category: 'ອຸປະກອນ', price: 64500, cost: 43000, stock: 20 },
   ]);
 
   const [members, setMembers] = useState<Member[]>([
     { id: 'M001', name: 'ສົມໄຊ ໃຈດີ', phone: '02055551111', address: 'ນະຄອນຫຼວງວຽງຈັນ' },
-    { id: 'M002', name: 'ນາງ ນ້ອຍ', phone: '02099998888', address: 'ຫຼວງພະບາງ' },
+    { id: 'M002', name: 'ນາງ ນ້ອຍ ມະນີ', phone: '02099887766', address: 'ຫຼວງພະບາງ' },
   ]);
 
   const [sales, setSales] = useState<SaleRecord[]>([]);
+  const [stockLogs, setStockLogs] = useState<StockInLog[]>([]);
 
-  // Form States (Admin Product)
+  // POS State
+  const [posSearch, setPosSearch] = useState('');
+  const [memberSearch, setMemberSearch] = useState('');
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [discountAmount, setDiscountAmount] = useState<number>(0);
+  const [receivedCash, setReceivedCash] = useState<number | ''>('');
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+
+  // Stock In Form State
+  const [stkProductId, setStkProductId] = useState('');
+  const [stkQty, setStkQty] = useState<number | ''>('');
+  const [stkCost, setStkCost] = useState<number | ''>('');
+  const [stkSupplier, setStkSupplier] = useState('');
+
+  // Admin Form States
   const [pId, setPId] = useState('');
   const [pName, setPName] = useState('');
-  const [pCategory, setPCategory] = useState('ເສື້ອ');
+  const [pCategory, setPCategory] = useState('');
   const [pPrice, setPPrice] = useState<number | ''>('');
-  const [pPromo, setPPromo] = useState<number | ''>('');
-  const [pWholesale, setPWholesale] = useState<number | ''>('');
   const [pCost, setPCost] = useState<number | ''>('');
   const [pStock, setPStock] = useState<number | ''>('');
   const [editProductMode, setEditProductMode] = useState(false);
 
-  // Form States (Admin Member)
   const [mId, setMId] = useState('');
   const [mName, setMName] = useState('');
   const [mPhone, setMPhone] = useState('');
   const [mAddress, setMAddress] = useState('');
   const [editMemberMode, setEditMemberMode] = useState(false);
 
-  // POS State
-  const [posProductSearch, setPosProductSearch] = useState('');
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [discountAmount, setDiscountAmount] = useState<number>(0);
-  const [receivedCash, setReceivedCash] = useState<number | ''>('');
-  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // Load Initial Storage
+  useEffect(() => {
+    const sName = localStorage.getItem('pos_shop_name');
+    const sLogo = localStorage.getItem('pos_logo');
+    const sPass = localStorage.getItem('pos_admin_pw');
+    const sCats = localStorage.getItem('pos_categories');
+    const sProds = localStorage.getItem('pos_products');
+    const sMems = localStorage.getItem('pos_members');
+    const sSales = localStorage.getItem('pos_sales');
+    const sStock = localStorage.getItem('pos_stock_logs');
 
-  // Clock
+    if (sName) setShopName(sName);
+    if (sLogo) setLogoUrl(sLogo);
+    if (sPass) setAdminPassword(sPass);
+    if (sCats) setCategories(JSON.parse(sCats));
+    if (sProds) setProducts(JSON.parse(sProds));
+    if (sMems) setMembers(JSON.parse(sMems));
+    if (sSales) setSales(JSON.parse(sSales));
+    if (sStock) setStockLogs(JSON.parse(sStock));
+  }, []);
+
+  // Real-time Clock Handler ( Liveliness )
   useEffect(() => {
     const updateClock = () => {
-      const d = new Date();
-      setTimeStr(d.toLocaleTimeString('lo-LA'));
-      setLaoDateStr(d.toLocaleDateString('lo-LA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }));
+      const now = new Date();
+      setRealTimeClock(now.toLocaleTimeString('lo-LA'));
+
+      const days = ['ວັນອາທິດ', 'ວັນຈັນ', 'ວັນອັງຄານ', 'ວັນພຸດ', 'ວັນພະຫັດ', 'ວັນສຸກ', 'ວັນເສົາ'];
+      const months = ['ມັງກອນ', 'ກຸມພາ', 'ມີນາ', 'ເມສາ', 'ພຶດສະພາ', 'ມິຖຸນາ', 'ກໍລະກົດ', 'ສິງຫາ', 'ກັນຍາ', 'ຕຸລາ', 'ພະຈິກ', 'ທັນວາ'];
+
+      setLaoDateStr(`${days[now.getDay()]}ທີ ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`);
     };
     updateClock();
-    const timer = setInterval(updateClock, 1000);
-    return () => clearInterval(timer);
+    const interval = setInterval(updateClock, 1000);
+    return () => clearInterval(interval);
   }, []);
+
+  // Calculation for Checkout
+  const subtotal = cart.reduce((sum, item) => sum + item.selectedPrice * item.qty, 0);
+  const finalTotal = Math.max(0, subtotal - discountAmount);
+  const changeAmount = typeof receivedCash === 'number' ? Math.max(0, receivedCash - finalTotal) : 0;
+
+  // Spacebar Keybind for Exact Cash
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (activeTab === 'pos' && e.code === 'Space') {
+        const target = e.target as HTMLElement;
+        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
+          e.preventDefault();
+          if (cart.length > 0) {
+            setReceivedCash(finalTotal);
+          }
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeTab, finalTotal, cart]);
 
   const showSwal = (title: string, text: string, icon: 'success' | 'error' | 'warning' | 'info') => {
     Swal.fire({
@@ -167,138 +222,72 @@ export default function POSPhengSone() {
     });
   };
 
-  // --- ADMIN AUTH ---
-  const handleAdminTabAccess = () => {
-    if (isAdminUnlocked) {
-      setActiveTab('admin');
+  // Logo Upload Handler
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const b64 = reader.result as string;
+        setLogoUrl(b64);
+        localStorage.setItem('pos_logo', b64);
+        showSwal('ສຳເລັດ!', 'ບັນທຶກໂລໂກ້ຮູບວົງມົນຮຽບຮ້ອຍແລ້ວ', 'success');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Stock In Action (ລະບົບຮັບສິນຄ້າເຂົ້າ)
+  const handleAddStockIn = () => {
+    if (!stkProductId || !stkQty || Number(stkQty) <= 0) {
+      showSwal('ເຕືອນ!', 'ກະລຸນາເລືອກສິນຄ້າ ແລະ ໃສ່ຈຳນວນຮັບເຂົ້າ', 'warning');
       return;
     }
-    Swal.fire({
-      title: '🔐 ປົດລັອກລະບົບ Admin',
-      text: 'ກະລຸນາ ໃສ່ລະຫັດຜ່ານ:',
-      input: 'password',
-      background: '#0f172a',
-      color: '#fff',
-      confirmButtonColor: '#06b6d4',
-      showCancelButton: true,
-      cancelButtonText: 'ຍົກເລີກ',
-    }).then((res) => {
-      if (res.isConfirmed && res.value === adminPassword) {
-        setIsAdminUnlocked(true);
-        setActiveTab('admin');
-      } else if (res.isConfirmed) {
-        showSwal('ຜິດພາດ!', 'ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ!', 'error');
-      }
-    });
-  };
+    const targetProduct = products.find((p) => p.id === stkProductId);
+    if (!targetProduct) return;
 
-  // --- MEMBER ACTIONS (WITH DELETE) ---
-  const handleSaveMember = () => {
-    if (!mId || !mName || !mPhone) {
-      showSwal('ເຕືອນ!', 'ກະລຸນາປ້ອນຂໍ້ມູນສະມາຊິກໃຫ້ຄົບ', 'warning');
-      return;
-    }
-    const newM: Member = { id: mId, name: mName, phone: mPhone, address: mAddress };
-    if (editMemberMode) {
-      setMembers(members.map((m) => (m.id === mId ? newM : m)));
-      showSwal('ສຳເລັດ!', 'ອັບເດດຂໍ້ມູນສະມາຊິກແລ້ວ', 'success');
-    } else {
-      if (members.some((m) => m.id === mId)) {
-        showSwal('ID ຊໍ້າ!', 'ລະຫັດສະມາຊິກນີ້ມີແລ້ວ', 'error');
-        return;
-      }
-      setMembers([...members, newM]);
-      showSwal('ສຳເລັດ!', 'ເພີ່ມສະມາຊິກໃໝ່ແລ້ວ', 'success');
-    }
-    resetMemberForm();
-  };
+    const addedQty = Number(stkQty);
+    const updatedCost = stkCost !== '' ? Number(stkCost) : targetProduct.cost;
 
-  const handleDeleteMember = (id: string) => {
-    Swal.fire({
-      title: 'ຢືນຢັນການລົບ?',
-      text: 'ທ່ານຕ້ອງການລົບລາຍຊື່ສະມາຊິກນີ້ອອກຈາກລະບົບແທ້ບໍ?',
-      icon: 'warning',
-      showCancelButton: true,
-      background: '#0f172a',
-      color: '#fff',
-      confirmButtonColor: '#ef4444',
-      confirmButtonText: 'ລົບ',
-      cancelButtonText: 'ຍົກເລີກ',
-    }).then((res) => {
-      if (res.isConfirmed) {
-        setMembers(members.filter((m) => m.id !== id));
-        if (selectedMember?.id === id) setSelectedMember(null);
-        showSwal('ສຳເລັດ!', 'ລົບລາຍຊື່ສະມາຊິກຮຽບຮ້ອຍແລ້ວ', 'success');
-      }
-    });
-  };
+    // Update product stock & cost
+    const updatedProducts = products.map((p) =>
+      p.id === stkProductId
+        ? { ...p, stock: p.stock + addedQty, cost: updatedCost }
+        : p
+    );
 
-  const resetMemberForm = () => {
-    setMId(''); setMName(''); setMPhone(''); setMAddress('');
-    setEditMemberMode(false);
-  };
-
-  // --- PRODUCT ACTIONS ---
-  const handleSaveProduct = () => {
-    if (!pId || !pName || pPrice === '' || pCost === '') {
-      showSwal('ເຕືອນ!', 'ກະລຸນາປ້ອນຂໍ້ມູນສິນຄ້າໃຫ້ຄົບ', 'warning');
-      return;
-    }
-    const newP: Product = {
-      id: pId,
-      name: pName,
-      category: pCategory,
-      price: Number(pPrice),
-      promoPrice: Number(pPromo || pPrice),
-      wholesalePrice: Number(pWholesale || pPrice),
-      cost: Number(pCost),
-      stock: Number(pStock || 0),
+    // Create log
+    const newLog: StockInLog = {
+      id: `STK-${Date.now().toString().slice(-6)}`,
+      productId: targetProduct.id,
+      productName: targetProduct.name,
+      qtyAdded: addedQty,
+      costPrice: updatedCost,
+      supplier: stkSupplier || 'ບໍ່ໄດ້ລະບຸ',
+      date: new Date().toLocaleString('lo-LA'),
     };
 
-    if (editProductMode) {
-      setProducts(products.map((p) => (p.id === pId ? newP : p)));
-      showSwal('ສຳເລັດ!', 'ອັບເດດສິນຄ້າແລ້ວ', 'success');
-    } else {
-      if (products.some((p) => p.id === pId)) {
-        showSwal('ID ຊໍ້າ!', 'ລະຫັດສິນຄ້ານີ້ມີແລ້ວ', 'error');
-        return;
-      }
-      setProducts([...products, newP]);
-      showSwal('ສຳເລັດ!', 'ເພີ່ມສິນຄ້າໃໝ່ແລ້ວ', 'success');
-    }
-    resetProductForm();
+    const updatedLogs = [newLog, ...stockLogs];
+
+    setProducts(updatedProducts);
+    setStockLogs(updatedLogs);
+
+    localStorage.setItem('pos_products', JSON.stringify(updatedProducts));
+    localStorage.setItem('pos_stock_logs', JSON.stringify(updatedLogs));
+
+    setStkProductId('');
+    setStkQty('');
+    setStkCost('');
+    setStkSupplier('');
+    showSwal('ສຳເລັດ!', `ເພີ່ມສະຕ໋ອກສິນຄ້າ ${targetProduct.name} (+${addedQty}) ເຂົ້າລະບົບແລ້ວ`, 'success');
   };
 
-  const handleDeleteProduct = (id: string) => {
-    Swal.fire({
-      title: 'ຢືນຢັນການລົບ?',
-      text: 'ຕ້ອງການລົບສິນຄ້ານີ້ອອກບໍ?',
-      icon: 'warning',
-      showCancelButton: true,
-      background: '#0f172a',
-      color: '#fff',
-      confirmButtonColor: '#ef4444',
-      confirmButtonText: 'ລົບ',
-    }).then((res) => {
-      if (res.isConfirmed) {
-        setProducts(products.filter((p) => p.id !== id));
-        showSwal('ສຳເລັດ!', 'ລົບສິນຄ້າແລ້ວ', 'success');
-      }
-    });
-  };
-
-  const resetProductForm = () => {
-    setPId(''); setPName(''); setPPrice(''); setPPromo(''); setPWholesale(''); setPCost(''); setPStock('');
-    setEditProductMode(false);
-  };
-
-  // --- POS CART ---
-  const addToCart = (product: Product, priceType: 'price' | 'promoPrice' | 'wholesalePrice' = 'price') => {
+  // Add to Cart
+  const addToCart = (product: Product) => {
     if (product.stock <= 0) {
       showSwal('ສິນຄ້າໝົດ!', 'ສິນຄ້ານີ້ໝົດສະຕ໋ອກແລ້ວ', 'warning');
       return;
     }
-    const price = product[priceType];
     const exist = cart.find((c) => c.product.id === product.id);
     if (exist) {
       if (exist.qty + 1 > product.stock) {
@@ -307,7 +296,7 @@ export default function POSPhengSone() {
       }
       setCart(cart.map((c) => (c.product.id === product.id ? { ...c, qty: c.qty + 1 } : c)));
     } else {
-      setCart([...cart, { product, qty: 1, selectedPrice: price }]);
+      setCart([...cart, { product, qty: 1, selectedPrice: product.price }]);
     }
   };
 
@@ -328,10 +317,6 @@ export default function POSPhengSone() {
         .filter(Boolean) as CartItem[]
     );
   };
-
-  const subtotal = cart.reduce((sum, item) => sum + item.selectedPrice * item.qty, 0);
-  const finalTotal = Math.max(0, subtotal - discountAmount);
-  const changeAmount = typeof receivedCash === 'number' ? Math.max(0, receivedCash - finalTotal) : 0;
 
   const handleCheckout = () => {
     if (cart.length === 0) {
@@ -364,14 +349,16 @@ export default function POSPhengSone() {
       totalAmount: finalTotal,
       totalCost: totalCostVal,
       totalProfit: finalTotal - totalCostVal,
-      memberId: selectedMember?.id,
       memberName: selectedMember?.name,
     };
 
+    const newSalesList = [newSale, ...sales];
     setProducts(updatedProducts);
-    setSales([newSale, ...sales]);
-    
-    // Print dialog & reset
+    setSales(newSalesList);
+
+    localStorage.setItem('pos_products', JSON.stringify(updatedProducts));
+    localStorage.setItem('pos_sales', JSON.stringify(newSalesList));
+
     window.print();
     setCart([]);
     setDiscountAmount(0);
@@ -380,48 +367,53 @@ export default function POSPhengSone() {
     showSwal('ຊຳລະເງິນສຳເລັດ!', `ເງິນທອນ: ${changeAmount.toLocaleString()} ₭`, 'success');
   };
 
-  // Filtered Products
+  // Filters
   const filteredProducts = products.filter((p) => {
-    const matchCategory = selectedCategory === 'ທັງໝົດ' || p.category === selectedCategory;
-    const matchSearch = p.name.toLowerCase().includes(posProductSearch.toLowerCase()) || p.id.toLowerCase().includes(posProductSearch.toLowerCase());
-    return matchCategory && matchSearch;
+    const matchCat = selectedCategory === 'ທັງໝົດ' || p.category === selectedCategory;
+    const matchSearch = p.name.toLowerCase().includes(posSearch.toLowerCase()) || p.id.toLowerCase().includes(posSearch.toLowerCase());
+    return matchCat && matchSearch;
   });
+
+  const filteredMembers = members.filter((m) =>
+    m.name.toLowerCase().includes(memberSearch.toLowerCase()) || m.phone.includes(memberSearch)
+  );
 
   return (
     <>
       <Head>
         <title>{shopName} - POS System</title>
-        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
       </Head>
 
       <div className="flex h-screen bg-slate-950 text-slate-100 font-['Noto_Sans_Lao','Phetsarath_OT',sans-serif] overflow-hidden">
-        {/* SIDEBAR */}
-        <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between p-4 z-20">
+        {/* SIDEBAR WITH MODERN GRADIENT & CIRCULAR 3x3 LOGO */}
+        <aside className="w-64 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border-r border-slate-800/80 flex flex-col justify-between p-4 z-20 shadow-2xl">
           <div>
-            {/* Logo */}
-            <div className="flex flex-col items-center mb-6">
+            {/* 3x3 Big Circular Logo */}
+            <div className="flex flex-col items-center mb-6 pt-2">
               <div
-                onClick={() => fileInputRef.current?.click()}
-                className="relative cursor-pointer rounded-2xl border-2 border-cyan-500/50 p-1 hover:border-cyan-400 transition-all shadow-lg shadow-cyan-500/10 group"
+                onClick={() => logoInputRef.current?.click()}
+                className="relative cursor-pointer w-28 h-28 rounded-full border-4 border-cyan-500/40 p-1 hover:border-cyan-400 transition-all shadow-xl shadow-cyan-500/20 group bg-slate-950 flex items-center justify-center overflow-hidden"
               >
-                <img src={logoUrl} alt="Logo" className="w-24 h-24 object-cover rounded-xl" />
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-xl transition-opacity text-xs font-medium">
-                  ປ່ຽນຮູບ
+                <img src={logoUrl} alt="Logo" className="w-full h-full object-cover rounded-full" />
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-full transition-opacity text-[11px] font-bold text-cyan-300 text-center px-2">
+                  ປ່ຽນໂລໂກ້ 3x3 ວົງມົນ
                 </div>
               </div>
-              <input type="file" ref={fileInputRef} onChange={(e) => {
-                if (e.target.files?.[0]) setLogoUrl(URL.createObjectURL(e.target.files[0]));
-              }} accept="image/*" className="hidden" />
-              <h1 className="mt-3 text-base font-bold text-cyan-400 text-center">{shopName}</h1>
-              <span className="text-xs text-slate-400 mt-1">{laoDateStr}</span>
+              <input type="file" ref={logoInputRef} onChange={handleLogoUpload} accept="image/*" className="hidden" />
+              <h1 className="mt-3 text-base font-extrabold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent text-center line-clamp-1">
+                {shopName}
+              </h1>
+              <span className="text-[11px] text-slate-400 mt-1 text-center font-medium">{laoDateStr}</span>
             </div>
 
-            {/* Menu */}
+            {/* Navigation Menu */}
             <nav className="space-y-1.5">
               {[
                 { id: 'pos', label: 'ໜ້າຂາຍ (POS)', icon: ShoppingCart },
+                { id: 'stockin', label: 'ຮັບສິນຄ້າເຂົ້າ (Stock In)', icon: PackagePlus },
                 { id: 'dashboard', label: 'ແດຊບອດ (Dashboard)', icon: LayoutDashboard },
-                { id: 'admin', label: 'ຈັດການລະບົບ (Admin)', icon: ShieldCheck, action: handleAdminTabAccess },
+                { id: 'admin', label: 'ຈັດການລະບົບ (Admin)', icon: ShieldCheck },
                 { id: 'reports', label: 'ລາຍງານ (Reports)', icon: FileBarChart },
                 { id: 'settings', label: 'ຕັ້ງຄ່າ (Settings)', icon: Settings },
               ].map((menu) => {
@@ -430,14 +422,14 @@ export default function POSPhengSone() {
                 return (
                   <button
                     key={menu.id}
-                    onClick={() => (menu.action ? menu.action() : setActiveTab(menu.id as any))}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                    onClick={() => setActiveTab(menu.id as any)}
+                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
                       active
-                        ? 'bg-cyan-500 text-slate-950 font-bold shadow-lg shadow-cyan-500/20'
+                        ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 shadow-lg shadow-cyan-500/25 scale-[1.02]'
                         : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
                     }`}
                   >
-                    <Icon className="w-5 h-5" />
+                    <Icon className="w-4 h-4" />
                     <span>{menu.label}</span>
                   </button>
                 );
@@ -445,40 +437,41 @@ export default function POSPhengSone() {
             </nav>
           </div>
 
-          <div className="text-center text-xs text-slate-500 py-2 border-t border-slate-800">
-            {timeStr} | POS v2.5 Pro
+          {/* Real-time Ticking Clock */}
+          <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-2.5 text-center flex items-center justify-center gap-2 text-cyan-400 font-mono text-xs shadow-inner">
+            <Clock className="w-4 h-4 animate-pulse text-cyan-400" />
+            <span className="font-bold tracking-wider">{realTimeClock}</span>
           </div>
         </aside>
 
-        {/* MAIN CONTENT AREA */}
+        {/* MAIN DISPLAY AREA */}
         <main className="flex-1 flex flex-col overflow-hidden bg-slate-950">
           {/* TAB 1: POS SCREEN */}
           {activeTab === 'pos' && (
             <div className="flex-1 flex overflow-hidden">
-              {/* Left Side: Product Grid */}
+              {/* Product Grid Area */}
               <div className="flex-1 flex flex-col p-4 overflow-hidden border-r border-slate-800">
-                {/* Search & Category Filter Header */}
                 <div className="flex flex-col gap-3 mb-4">
                   <div className="relative">
-                    <Search className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
+                    <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-slate-400" />
                     <input
                       type="text"
-                      placeholder="ຄົ້ນຫາຊື່ສິນຄ້າ ຫຼື ລະຫັດ (Barcode)..."
-                      value={posProductSearch}
-                      onChange={(e) => setPosProductSearch(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-cyan-500"
+                      placeholder="ຄົ້ນຫາຊື່ສິນຄ້າ ຫຼື ລະຫັດ Barcode..."
+                      value={posSearch}
+                      onChange={(e) => setPosSearch(e.target.value)}
+                      className="w-full bg-slate-900/90 border border-slate-800 rounded-xl pl-10 pr-4 py-2 text-xs text-slate-100 focus:outline-none focus:border-cyan-500 transition-all shadow-inner"
                     />
                   </div>
 
-                  {/* Category Pills */}
+                  {/* Category Buttons */}
                   <div className="flex gap-2 overflow-x-auto pb-1">
-                    {categories.map((cat) => (
+                    {['ທັງໝົດ', ...categories].map((cat) => (
                       <button
                         key={cat}
                         onClick={() => setSelectedCategory(cat)}
-                        className={`px-4 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+                        className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                           selectedCategory === cat
-                            ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
+                            ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 shadow-md shadow-cyan-500/20'
                             : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200'
                         }`}
                       >
@@ -488,29 +481,29 @@ export default function POSPhengSone() {
                   </div>
                 </div>
 
-                {/* Products Cards */}
+                {/* Products List */}
                 <div className="flex-1 overflow-y-auto grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 pr-1">
                   {filteredProducts.map((p) => (
                     <div
                       key={p.id}
                       onClick={() => addToCart(p)}
-                      className="bg-slate-900 border border-slate-800 hover:border-cyan-500/50 rounded-xl p-3 flex flex-col justify-between cursor-pointer transition-all hover:scale-[1.02] shadow-md group"
+                      className="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800/80 hover:border-cyan-500/50 rounded-2xl p-3 flex flex-col justify-between cursor-pointer transition-all hover:scale-[1.02] shadow-lg group"
                     >
                       <div>
-                        <div className="flex justify-between items-start gap-1 mb-1">
-                          <span className="text-xs text-slate-500 font-mono">{p.id}</span>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${p.stock <= 5 ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="text-[10px] text-slate-500 font-mono font-bold">{p.id}</span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${p.stock <= 3 ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'}`}>
                             ສະຕ໋ອກ: {p.stock}
                           </span>
                         </div>
-                        <h3 className="font-semibold text-sm text-slate-200 group-hover:text-cyan-400 transition-colors line-clamp-2">
+                        <h3 className="font-semibold text-xs text-slate-200 group-hover:text-cyan-400 transition-colors line-clamp-2">
                           {p.name}
                         </h3>
                       </div>
 
                       <div className="mt-3 pt-2 border-t border-slate-800/80 flex justify-between items-end">
-                        <span className="text-xs text-slate-400">{p.category}</span>
-                        <span className="text-base font-bold text-cyan-400">
+                        <span className="text-[10px] text-slate-400">{p.category}</span>
+                        <span className="text-sm font-extrabold text-cyan-400">
                           {p.price.toLocaleString()} ₭
                         </span>
                       </div>
@@ -519,15 +512,23 @@ export default function POSPhengSone() {
                 </div>
               </div>
 
-              {/* Right Side: Cart & Payment Checkout */}
-              <div className="w-[380px] bg-slate-900 flex flex-col h-full border-l border-slate-800">
-                {/* Member Selector Bar */}
-                <div className="p-3 border-b border-slate-800 bg-slate-950/40 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-cyan-400" />
-                    <span className="text-xs font-medium text-slate-300">
-                      {selectedMember ? selectedMember.name : 'ລູກຄ້າທົ່ວໄປ'}
-                    </span>
+              {/* Cart Panel & Customer Search */}
+              <div className="w-[390px] bg-slate-900/90 flex flex-col h-full border-l border-slate-800">
+                {/* Customer Search Section (ເພີ່ມຊ່ອງຄົ້ນຫາລູກຄ້າ) */}
+                <div className="p-3 border-b border-slate-800 bg-slate-950/60 space-y-2">
+                  <div className="flex items-center gap-2 text-cyan-400 text-xs font-bold">
+                    <UserCheck className="w-4 h-4" />
+                    <span>ຄົ້ນຫາ & ເລືອກລູກຄ້າ</span>
+                  </div>
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2 w-3.5 h-3.5 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="ພິມຊື່ ຫຼື ເບີໂທລູກຄ້າ..."
+                      value={memberSearch}
+                      onChange={(e) => setMemberSearch(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-lg pl-8 pr-3 py-1 text-[11px] text-slate-100 focus:outline-none focus:border-cyan-500"
+                    />
                   </div>
                   <select
                     onChange={(e) => {
@@ -535,10 +536,10 @@ export default function POSPhengSone() {
                       setSelectedMember(m || null);
                     }}
                     value={selectedMember?.id || ''}
-                    className="bg-slate-900 border border-slate-700 text-xs rounded-lg px-2 py-1 text-slate-200 focus:outline-none"
+                    className="w-full bg-slate-900 border border-slate-800 text-xs rounded-lg px-2 py-1.5 text-slate-200 focus:outline-none font-medium"
                   >
-                    <option value="">-- ເລືອກສະມາຊິກ --</option>
-                    {members.map((m) => (
+                    <option value="">-- ລູກຄ້າທົ່ວໄປ (General Customer) --</option>
+                    {filteredMembers.map((m) => (
                       <option key={m.id} value={m.id}>
                         {m.name} ({m.phone})
                       </option>
@@ -546,16 +547,16 @@ export default function POSPhengSone() {
                   </select>
                 </div>
 
-                {/* Cart Items List */}
+                {/* Cart Items */}
                 <div className="flex-1 overflow-y-auto p-3 space-y-2">
                   {cart.length === 0 ? (
                     <div className="h-full flex flex-col items-center justify-center text-slate-500 text-xs gap-2">
                       <ShoppingCart className="w-10 h-10 opacity-30" />
-                      <span>ຍັງບໍ່ມີສິນຄ້າໃນກະຕ່າ</span>
+                      <span>ກະຕ່າຫວ່າງ (ກົດ Spacebar ເພື່ອຮັບເງິນພໍດີ)</span>
                     </div>
                   ) : (
                     cart.map((item) => (
-                      <div key={item.product.id} className="bg-slate-950 border border-slate-800 rounded-lg p-2.5 flex items-center justify-between">
+                      <div key={item.product.id} className="bg-slate-950/80 border border-slate-800 rounded-xl p-2.5 flex items-center justify-between shadow-sm">
                         <div className="flex-1 pr-2">
                           <h4 className="text-xs font-semibold text-slate-200 truncate">{item.product.name}</h4>
                           <span className="text-[11px] text-cyan-400 font-bold">{item.selectedPrice.toLocaleString()} ₭</span>
@@ -563,14 +564,14 @@ export default function POSPhengSone() {
                         <div className="flex items-center gap-1.5">
                           <button
                             onClick={() => updateCartQty(item.product.id, -1)}
-                            className="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-xs"
+                            className="w-6 h-6 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-xs font-bold"
                           >
                             -
                           </button>
-                          <span className="text-xs font-bold w-5 text-center">{item.qty}</span>
+                          <span className="text-xs font-extrabold w-6 text-center text-cyan-400">{item.qty}</span>
                           <button
                             onClick={() => updateCartQty(item.product.id, 1)}
-                            className="w-6 h-6 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-xs"
+                            className="w-6 h-6 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center text-xs font-bold"
                           >
                             +
                           </button>
@@ -580,10 +581,9 @@ export default function POSPhengSone() {
                   )}
                 </div>
 
-                {/* Checkout Panel */}
-                <div className="p-4 border-t border-slate-800 bg-slate-950/80 space-y-3">
-                  {/* Totals */}
-                  <div className="space-y-1.5 text-xs">
+                {/* Summary & Spacebar Quick Cash */}
+                <div className="p-4 border-t border-slate-800 bg-slate-950 space-y-3">
+                  <div className="space-y-1 text-xs">
                     <div className="flex justify-between text-slate-400">
                       <span>ລວມຍອດສິນຄ້າ:</span>
                       <span>{subtotal.toLocaleString()} ₭</span>
@@ -600,46 +600,36 @@ export default function POSPhengSone() {
                     </div>
                     <div className="flex justify-between font-bold text-sm text-slate-100 pt-1 border-t border-slate-800">
                       <span>ຍອດຕ້ອງຊຳລະ:</span>
-                      <span className="text-cyan-400 text-base">{finalTotal.toLocaleString()} ₭</span>
+                      <span className="text-cyan-400 text-base font-extrabold">{finalTotal.toLocaleString()} ₭</span>
                     </div>
                   </div>
 
-                  {/* Cash Received Input */}
                   <div>
-                    <label className="text-[11px] text-slate-400 block mb-1">ຮັບເງິນມາ (₭):</label>
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="text-[11px] text-slate-400 font-medium">ຮັບເງິນມາ (₭):</label>
+                      <span className="text-[10px] text-cyan-400/90 font-bold bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-500/30">
+                        [Spacebar] = ຮັບເງິນພໍດີ
+                      </span>
+                    </div>
                     <input
                       type="number"
                       value={receivedCash}
                       onChange={(e) => setReceivedCash(e.target.value === '' ? '' : Number(e.target.value))}
                       placeholder="0"
-                      className="w-full bg-slate-900 border border-cyan-500/50 rounded-lg px-3 py-2 text-right font-bold text-cyan-400 text-base focus:outline-none focus:border-cyan-400"
+                      className="w-full bg-slate-900 border border-cyan-500/50 rounded-xl px-3 py-2 text-right font-extrabold text-cyan-400 text-base focus:outline-none focus:border-cyan-400 shadow-inner"
                     />
-                    {/* Quick Cash Buttons */}
-                    <div className="grid grid-cols-3 gap-1.5 mt-2">
-                      {[50000, 100000, 500000].map((val) => (
-                        <button
-                          key={val}
-                          onClick={() => setReceivedCash((prev) => (typeof prev === 'number' ? prev + val : val))}
-                          className="bg-slate-800 hover:bg-slate-700 text-slate-300 py-1 rounded text-[11px] font-medium"
-                        >
-                          +{val / 1000}k
-                        </button>
-                      ))}
-                    </div>
                   </div>
 
-                  {/* Change */}
-                  <div className="flex justify-between text-xs font-semibold text-emerald-400 pt-1">
+                  <div className="flex justify-between text-xs font-bold text-emerald-400 pt-1">
                     <span>ເງິນທອນ:</span>
                     <span>{changeAmount.toLocaleString()} ₭</span>
                   </div>
 
-                  {/* Pay Button */}
                   <button
                     onClick={handleCheckout}
-                    className="w-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold py-3 rounded-xl shadow-lg shadow-cyan-500/20 transition-all flex items-center justify-center gap-2"
+                    className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-extrabold py-3 rounded-xl shadow-lg shadow-cyan-500/25 transition-all flex items-center justify-center gap-2 text-xs"
                   >
-                    <Printer className="w-5 h-5" />
+                    <Printer className="w-4 h-4" />
                     <span>ຊຳລະເງິນ & ພິມໃບບິນ</span>
                   </button>
                 </div>
@@ -647,120 +637,118 @@ export default function POSPhengSone() {
             </div>
           )}
 
-          {/* TAB 2: ADMIN PANEL (PRODUCTS & MEMBERS WITH DELETE) */}
-          {activeTab === 'admin' && (
-            <div className="flex-1 overflow-y-auto p-6 space-y-8">
-              {/* Product Management */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
-                <h2 className="text-base font-bold text-cyan-400 mb-4 flex items-center gap-2">
-                  <Package className="w-5 h-5" />
-                  <span>ຈັດການສິນຄ້າ (Products)</span>
-                </h2>
+          {/* TAB 2: STOCK IN (ລະບົບຈັດການຮັບສິນຄ້າເຂົ້າ) */}
+          {activeTab === 'stockin' && (
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+                <PackagePlus className="w-6 h-6 text-cyan-400" />
+                <h2 className="text-base font-bold text-slate-100">ລະບົບຈັດການຮັບສິນຄ້າເຂົ້າສະຕ໋ອກ (Stock In System)</h2>
+              </div>
 
-                {/* Form */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                  <input placeholder="ລະຫັດສິນຄ້າ (ID)" value={pId} onChange={(e) => setPId(e.target.value)} disabled={editProductMode} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs" />
-                  <input placeholder="ຊື່ສິນຄ້າ" value={pName} onChange={(e) => setPName(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs" />
-                  <select value={pCategory} onChange={(e) => setPCategory(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs">
-                    {categories.filter(c => c !== 'ທັງໝົດ').map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                  <input type="number" placeholder="ລາຄາຂາຍ (₭)" value={pPrice} onChange={(e) => setPPrice(e.target.value === '' ? '' : Number(e.target.value))} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs" />
-                  <input type="number" placeholder="ຕົ້ນທຶນ (₭)" value={pCost} onChange={(e) => setPCost(e.target.value === '' ? '' : Number(e.target.value))} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs" />
-                  <input type="number" placeholder="ຈຳນວນສະຕ໋ອກ" value={pStock} onChange={(e) => setPStock(e.target.value === '' ? '' : Number(e.target.value))} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs" />
-                  <div className="col-span-2 flex gap-2">
-                    <button onClick={handleSaveProduct} className="flex-1 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold py-2 rounded-xl text-xs">
-                      {editProductMode ? 'ອັບເດດ' : 'ເພີ່ມສິນຄ້າ'}
-                    </button>
-                    {editProductMode && <button onClick={resetProductForm} className="bg-slate-800 px-4 py-2 rounded-xl text-xs">ຍົກເລີກ</button>}
+              {/* Form Add Stock In */}
+              <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+                <h3 className="text-xs font-bold text-cyan-400 uppercase tracking-wider">ບັນທຶກການຮັບສິນຄ້າໃໝ່</h3>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  <div>
+                    <label className="text-[11px] text-slate-400 block mb-1">ເລືອກສິນຄ້າ:</label>
+                    <select
+                      value={stkProductId}
+                      onChange={(e) => {
+                        setStkProductId(e.target.value);
+                        const p = products.find((x) => x.id === e.target.value);
+                        if (p) setStkCost(p.cost);
+                      }}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-cyan-500"
+                    >
+                      <option value="">-- ເລືອກສິນຄ້າ --</option>
+                      {products.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.id} - {p.name} (ສະຕ໋ອກປັດຈຸບັນ: {p.stock})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] text-slate-400 block mb-1">ຈຳນວນຮັບເຂົ້າ (+):</label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={stkQty}
+                      onChange={(e) => setStkQty(e.target.value === '' ? '' : Number(e.target.value))}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-cyan-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] text-slate-400 block mb-1">ຕົ້ນທຶນໃໝ່ (₭ / ຊິ້ນ):</label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={stkCost}
+                      onChange={(e) => setStkCost(e.target.value === '' ? '' : Number(e.target.value))}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-cyan-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] text-slate-400 block mb-1">ຜູ້ສະໜອງ / ໝາຍເຫດ:</label>
+                    <input
+                      type="text"
+                      placeholder="ຊື່ຮ້ານ / ໂຮງງານ..."
+                      value={stkSupplier}
+                      onChange={(e) => setStkSupplier(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-cyan-500"
+                    />
                   </div>
                 </div>
 
-                {/* Table */}
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs text-slate-300">
-                    <thead className="bg-slate-950 text-slate-400 border-b border-slate-800">
-                      <tr>
-                        <th className="p-2.5">ID</th>
-                        <th className="p-2.5">ຊື່ສິນຄ້າ</th>
-                        <th className="p-2.5">ໝວດໝູ່</th>
-                        <th className="p-2.5">ລາຄາຂາຍ</th>
-                        <th className="p-2.5">ຕົ້ນທຶນ</th>
-                        <th className="p-2.5">ສະຕ໋ອກ</th>
-                        <th className="p-2.5 text-right">ຈັດການ</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800/50">
-                      {products.map((p) => (
-                        <tr key={p.id} className="hover:bg-slate-850">
-                          <td className="p-2.5 font-mono text-cyan-400">{p.id}</td>
-                          <td className="p-2.5 font-medium text-slate-200">{p.name}</td>
-                          <td className="p-2.5 text-slate-400">{p.category}</td>
-                          <td className="p-2.5">{p.price.toLocaleString()} ₭</td>
-                          <td className="p-2.5">{p.cost.toLocaleString()} ₭</td>
-                          <td className="p-2.5">{p.stock}</td>
-                          <td className="p-2.5 text-right space-x-2">
-                            <button onClick={() => {
-                              setPId(p.id); setPName(p.name); setPCategory(p.category); setPPrice(p.price); setPCost(p.cost); setPStock(p.stock); setEditProductMode(true);
-                            }} className="text-amber-400 hover:underline">ແກ້ໄຂ</button>
-                            <button onClick={() => handleDeleteProduct(p.id)} className="text-red-400 hover:underline">ລົບ</button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <button
+                  onClick={handleAddStockIn}
+                  className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold px-5 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-md shadow-cyan-500/20"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>ບັນທຶກຮັບສິນຄ້າເຂົ້າ</span>
+                </button>
               </div>
 
-              {/* Member Management WITH DELETE */}
+              {/* Log History */}
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
-                <h2 className="text-base font-bold text-cyan-400 mb-4 flex items-center gap-2">
-                  <Users className="w-5 h-5" />
-                  <span>ຈັດການສະມາຊິກ (Members / Customers)</span>
-                </h2>
-
-                {/* Form */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
-                  <input placeholder="ID ສະມາຊິກ" value={mId} onChange={(e) => setMId(e.target.value)} disabled={editMemberMode} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs" />
-                  <input placeholder="ຊື່ ແລະ ນາມສະກຸນ" value={mName} onChange={(e) => setMName(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs" />
-                  <input placeholder="ເບີໂທລະສັບ" value={mPhone} onChange={(e) => setMPhone(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs" />
-                  <input placeholder="ທີ່ຢູ່" value={mAddress} onChange={(e) => setMAddress(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs" />
-                </div>
-                <div className="flex gap-2 mb-4">
-                  <button onClick={handleSaveMember} className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-5 py-2 rounded-xl text-xs">
-                    {editMemberMode ? 'ອັບເດດສະມາຊິກ' : 'ເພີ່ມສະມາຊິກໃໝ່'}
-                  </button>
-                  {editMemberMode && <button onClick={resetMemberForm} className="bg-slate-800 px-4 py-2 rounded-xl text-xs">ຍົກເລີກ</button>}
-                </div>
-
-                {/* Table */}
+                <h3 className="text-xs font-bold text-slate-300 mb-3 flex items-center gap-2">
+                  <ArrowDownCircle className="w-4 h-4 text-emerald-400" />
+                  <span>ປະວັດການຮັບສິນຄ້າເຂົ້າສະຕ໋ອກ</span>
+                </h3>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs text-slate-300">
                     <thead className="bg-slate-950 text-slate-400 border-b border-slate-800">
                       <tr>
-                        <th className="p-2.5">ID</th>
-                        <th className="p-2.5">ຊື່ສະມາຊິກ</th>
-                        <th className="p-2.5">ເບີໂທ</th>
-                        <th className="p-2.5">ທີ່ຢູ່</th>
-                        <th className="p-2.5 text-right">ຈັດການ</th>
+                        <th className="p-2.5">ID ຮັບເຂົ້າ</th>
+                        <th className="p-2.5">ວັນທີ-ເວລາ</th>
+                        <th className="p-2.5">ຊື່ສິນຄ້າ</th>
+                        <th className="p-2.5 text-center">ຈຳນວນຮັບ</th>
+                        <th className="p-2.5">ຕົ້ນທຶນ/ຊິ້ນ</th>
+                        <th className="p-2.5">ຜູ້ສະໜອງ</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/50">
-                      {members.map((m) => (
-                        <tr key={m.id} className="hover:bg-slate-850">
-                          <td className="p-2.5 font-mono text-cyan-400">{m.id}</td>
-                          <td className="p-2.5 font-medium text-slate-200">{m.name}</td>
-                          <td className="p-2.5">{m.phone}</td>
-                          <td className="p-2.5 text-slate-400">{m.address}</td>
-                          <td className="p-2.5 text-right space-x-3">
-                            <button onClick={() => {
-                              setMId(m.id); setMName(m.name); setMPhone(m.phone); setMAddress(m.address); setEditMemberMode(true);
-                            }} className="text-amber-400 hover:underline">ແກ້ໄຂ</button>
-                            <button onClick={() => handleDeleteMember(m.id)} className="text-red-400 hover:underline font-semibold">
-                              ລົບລາຍຊື່
-                            </button>
+                      {stockLogs.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="text-center text-slate-500 py-6">
+                            ຍັງບໍ່ມີປະວັດການຮັບສິນຄ້າເຂົ້າ
                           </td>
                         </tr>
-                      ))}
+                      ) : (
+                        stockLogs.map((log) => (
+                          <tr key={log.id} className="hover:bg-slate-850">
+                            <td className="p-2.5 font-mono text-cyan-400">{log.id}</td>
+                            <td className="p-2.5 text-slate-400">{log.date}</td>
+                            <td className="p-2.5 font-medium text-slate-200">{log.productName}</td>
+                            <td className="p-2.5 text-center font-bold text-emerald-400">+{log.qtyAdded}</td>
+                            <td className="p-2.5">{log.costPrice.toLocaleString()} ₭</td>
+                            <td className="p-2.5 text-slate-400">{log.supplier}</td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -768,60 +756,119 @@ export default function POSPhengSone() {
             </div>
           )}
 
-          {/* TAB 3: DASHBOARD STATS */}
+          {/* TAB 3: DASHBOARD */}
           {activeTab === 'dashboard' && (
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              <h2 className="text-lg font-bold text-slate-100">ພາບລວມຍອດຂາຍ (Dashboard)</h2>
+              <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-cyan-400" />
+                <span>ພາບລວມຍອດຂາຍ (Dashboard Real-time)</span>
+              </h2>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+                <div className="bg-gradient-to-br from-slate-900 to-cyan-950/40 border border-slate-800 p-4 rounded-2xl shadow-lg">
                   <span className="text-xs text-slate-400">ຍອດຂາຍລວມ</span>
-                  <p className="text-xl font-bold text-cyan-400 mt-1">
+                  <p className="text-2xl font-extrabold text-cyan-400 mt-1">
                     {sales.reduce((acc, s) => acc + s.totalAmount, 0).toLocaleString()} ₭
                   </p>
                 </div>
-                <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+                <div className="bg-gradient-to-br from-slate-900 to-emerald-950/40 border border-slate-800 p-4 rounded-2xl shadow-lg">
                   <span className="text-xs text-slate-400">ກຳໄລລວມ</span>
-                  <p className="text-xl font-bold text-emerald-400 mt-1">
+                  <p className="text-2xl font-extrabold text-emerald-400 mt-1">
                     {sales.reduce((acc, s) => acc + s.totalProfit, 0).toLocaleString()} ₭
                   </p>
                 </div>
-                <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-                  <span className="text-xs text-slate-400">ຈຳນວນອໍເດີ</span>
-                  <p className="text-xl font-bold text-amber-400 mt-1">{sales.length} ອໍເດີ</p>
+                <div className="bg-gradient-to-br from-slate-900 to-amber-950/40 border border-slate-800 p-4 rounded-2xl shadow-lg">
+                  <span className="text-xs text-slate-400">ອໍເດີທັງໝົດ</span>
+                  <p className="text-2xl font-extrabold text-amber-400 mt-1">{sales.length} ບິນ</p>
                 </div>
-                <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-                  <span className="text-xs text-slate-400">ສິນຄ້າໃນສະຕ໋ອກ</span>
-                  <p className="text-xl font-bold text-purple-400 mt-1">
+                <div className="bg-gradient-to-br from-slate-900 to-purple-950/40 border border-slate-800 p-4 rounded-2xl shadow-lg">
+                  <span className="text-xs text-slate-400">ສິນຄ້າຄົງຄັງ</span>
+                  <p className="text-2xl font-extrabold text-purple-400 mt-1">
                     {products.reduce((acc, p) => acc + p.stock, 0)} ຊິ້ນ
                   </p>
                 </div>
               </div>
             </div>
           )}
+
+          {/* TAB 4: ADMIN */}
+          {activeTab === 'admin' && (
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+                <h2 className="text-xs font-bold text-cyan-400 flex items-center gap-2">
+                  <Package className="w-4 h-4" />
+                  <span>ຈັດການສິນຄ້າ (Products Management)</span>
+                </h2>
+
+                <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+                  <input placeholder="ID ສິນຄ້າ (ພິມເອງ)" value={pId} onChange={(e) => setPId(e.target.value)} disabled={editProductMode} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100" />
+                  <input placeholder="ຊື່ສິນຄ້າ" value={pName} onChange={(e) => setPName(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 col-span-2" />
+                  <select value={pCategory} onChange={(e) => setPCategory(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100">
+                    {categories.map((c) => (<option key={c} value={c}>{c}</option>))}
+                  </select>
+                  <input type="number" placeholder="ລາຄາຂາຍ (₭)" value={pPrice} onChange={(e) => setPPrice(e.target.value === '' ? '' : Number(e.target.value))} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100" />
+                  <input type="number" placeholder="ຕົ້ນທຶນ (₭)" value={pCost} onChange={(e) => setPCost(e.target.value === '' ? '' : Number(e.target.value))} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100" />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 5: REPORTS */}
+          {activeTab === 'reports' && (
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
+                <FileBarChart className="w-5 h-5 text-cyan-400" />
+                <span>ລາຍງານປະວັດການຂາຍ (Sales Reports)</span>
+              </h2>
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+                <table className="w-full text-left text-xs text-slate-300">
+                  <thead className="bg-slate-950 text-slate-400 border-b border-slate-800">
+                    <tr>
+                      <th className="p-2.5">ID ໃບບິນ</th>
+                      <th className="p-2.5">ວັນທີ-ເວລາ</th>
+                      <th className="p-2.5">ລູກຄ້າ</th>
+                      <th className="p-2.5">ຍອດຊຳລະ</th>
+                      <th className="p-2.5">ກຳໄລ Net</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/50">
+                    {sales.map((s) => (
+                      <tr key={s.id}>
+                        <td className="p-2.5 font-mono text-cyan-400">{s.id}</td>
+                        <td className="p-2.5 text-slate-400">{s.date}</td>
+                        <td className="p-2.5">{s.memberName || 'ລູກຄ້າທົ່ວໄປ'}</td>
+                        <td className="p-2.5 font-bold text-cyan-400">{s.totalAmount.toLocaleString()} ₭</td>
+                        <td className="p-2.5 font-bold text-emerald-400">{s.totalProfit.toLocaleString()} ₭</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 6: SETTINGS */}
+          {activeTab === 'settings' && (
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
+                <Settings className="w-5 h-5 text-cyan-400" />
+                <span>ຕັ້ງຄ່າລະບົບ (System Settings)</span>
+              </h2>
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+                <label className="text-xs text-slate-400 block">ຊື່ຮ້ານ:</label>
+                <input
+                  type="text"
+                  value={shopName}
+                  onChange={(e) => {
+                    setShopName(e.target.value);
+                    localStorage.setItem('pos_shop_name', e.target.value);
+                  }}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100"
+                />
+              </div>
+            </div>
+          )}
         </main>
       </div>
-
-      {/* PRINT RECEIPT STYLING (FOR 80MM THERMAL PRINTER) */}
-      <style jsx global>{`
-        @media print {
-          body * {
-            visibility: hidden;
-          }
-          .printable-receipt, .printable-receipt * {
-            visibility: visible;
-          }
-          .printable-receipt {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 80mm;
-            padding: 10px;
-            color: #000;
-            background: #fff;
-            font-family: 'Noto Sans Lao', sans-serif;
-          }
-        }
-      `}</style>
     </>
   );
 }
