@@ -1,4 +1,6 @@
+/** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: true,
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -7,4 +9,4 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+module.exports = nextConfig;
