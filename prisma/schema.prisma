@@ -4,95 +4,43 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-}
-
-model Settings {
-  id          String   @id @default(cuid())
-  programName String   @default("POS ຮ້ານ ແພງສອນ ຂາຍ Online")
-  logoUrl     String?
-  theme       String   @default("dark")
-  currency    String   @default("LAK")
-  timezone    String   @default("Asia/Vientiane")
-  adminPin    String   @default("1234")
-  language    String   @default("lo")
-  updatedAt   DateTime @updatedAt
-}
-
-model Category {
-  id       String    @id @default(cuid())
-  name     String
-  products Product[]
+  url      = env("DATABASE_URL")
 }
 
 model Product {
-  id          String          @id @default(cuid())
-  barcode     String?         @unique
-  name        String
-  categoryId  String
-  category    Category        @relation(fields: [categoryId], references: [id])
-  unit        String
-  costPrice   Float
-  retailPrice Float
-  promoPrice  Float?
-  agentPrice  Float?
-  stock       Int             @default(0)
-  minStock    Int             @default(5)
-  status      String          @default("ACTIVE")
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  saleItems   SaleItem[]
-  stockMoves  StockMovement[]
-}
-
-model Member {
-  id        String   @id @default(cuid())
-  memberId  String   @unique
-  name      String
-  phone     String?  @unique
-  address   String?
-  type      String   @default("GENERAL")
-  createdAt DateTime @default(now())
-  sales     Sale[]
-}
-
-model Sale {
-  id            String     @id @default(cuid())
-  invoiceId     String     @unique
-  memberId      String?
-  member        Member?    @relation(fields: [memberId], references: [id])
-  totalAmount   Float
-  discount      Float      @default(0)
-  shippingFee   Float      @default(0)
-  netAmount     Float
-  paidAmount    Float
-  change        Float
-  paymentMethod String
-  status        String     @default("COMPLETED")
-  createdAt     DateTime   @default(now())
-  items         SaleItem[]
-}
-
-model SaleItem {
-  id        String  @id @default(cuid())
-  saleId    String
-  sale      Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
-  qty       Int
-  unitPrice Float
-  discount  Float   @default(0)
-  subTotal  Float
-}
-
-model StockMovement {
   id          String   @id @default(cuid())
-  productId   String
-  product     Product  @relation(fields: [productId], references: [id])
-  type        String
-  qtyBefore   Int
-  qtyAfter    Int
-  qtyChanged  Int
-  reason      String?
-  referenceId String?
+  name        String
+  price       Float
+  cost        Float?
+  stock       Int
+  category    String?
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  points    Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  totalAmount Float
+  discount    Float       @default(0)
+  finalAmount Float
+  paymentMethod String
+  createdAt   DateTime    @default(now())
+  items       OrderItem[]
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  quantity  Int
+  price     Float
 }
