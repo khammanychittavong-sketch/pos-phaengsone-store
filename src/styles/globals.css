@@ -1,22 +1,75 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@300;400;500;600;700;800&family=Orbitron:wght@600;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@font-face {
-  font-family: 'Phetsalart OT';
-  src: url('/fonts/PhetsalartOT.ttf') format('truetype');
-}
-
 :root {
-  --primary-color: #0d1b2a;
-  --sidebar-color: #1b263b;
-  --accent-color: #00f5d4;
-  --text-color: #ffffff;
-  --font-base-size: 16px;
+  --custom-text-color: #e2e8f0;
+  --custom-number-color: #38bdf8;
 }
 
 body {
-  background-color: var(--primary-color);
-  color: var(--text-color);
-  font-size: var(--font-base-size);
+  background-color: #0b1120;
+  color: var(--custom-text-color);
+  font-family: 'Noto Sans Lao', 'Phetsarath OT', sans-serif;
+  overflow-x: hidden;
+}
+
+/* Glassmorphism Classes */
+.glass-panel {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(51, 65, 85, 0.6);
+}
+
+.glass-card {
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(71, 85, 105, 0.4);
+}
+
+.neon-glow-btn:hover {
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.6);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0b1120;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #06b6d4;
+}
+
+/* Print Receipt Stylesheet */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #printable-receipt, #printable-receipt * {
+    visibility: visible;
+  }
+  #printable-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm;
+    margin: 0;
+    padding: 10px;
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 12px;
+  }
+  .no-print {
+    display: none !important;
+  }
 }
