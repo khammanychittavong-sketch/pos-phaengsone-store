@@ -1,3 +1,6 @@
+ນີ້ແມ່ນໂຄ້ດ **`src/pages/index.tsx` ສະບັບເຕັມ 100%** ທີ່ໄດ້ອັບເດດຊື່ຮ້ານເປັນ **"ຮ້ານ ແພງສອນ ຂາຍ Online (ຍິນດີຕ້ອນຮັບ)"** ໃນທຸກໆຈຸດຂອງລະບົບ (ຫົວເວັບ, Sidebar, ແຜງຄວບຄຸມ Dashboard, ໃບບິນ Receipt, ແລະ ໜ້າການຕັ້ງຄ່າ):
+
+```tsx
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import Head from "next/head";
 import Swal from "sweetalert2";
@@ -36,9 +39,7 @@ import {
   DollarSign,
   Clock,
   Radio,
-  Image as ImageIcon,
-  Key,
-  RefreshCw,
+  Store,
   Sparkles,
 } from "lucide-react";
 
@@ -116,11 +117,8 @@ interface StockInRecord {
 interface ShopSettings {
   shopName: string;
   adminPassword: string;
-  logoUrl: string;
-  logoSize: number;
   textColor: string;
   numberColor: string;
-  rainbowBorder: boolean;
 }
 
 export default function PhaengsonePOS() {
@@ -133,18 +131,15 @@ export default function PhaengsonePOS() {
   const [currentTime, setCurrentTime] = useState<string>("");
   const [currentLaoDate, setCurrentLaoDate] = useState<string>("");
 
-  // --- Shop Settings State ---
+  // --- Shop Settings State (ຕັ້ງຊື່ຮ້ານໃໝ່) ---
   const [settings, setSettings] = useState<ShopSettings>({
-    shopName: "ຮ້ານ ແພງສອນ ຂາຍ Online",
+    shopName: "ຮ້ານ ແພງສອນ ຂາຍ Online (ຍິນດີຕ້ອນຮັບ)",
     adminPassword: "11222",
-    logoUrl: "https://images.unsplash.com/photo-1556742049-0a67e557224d?w=150&auto=format&fit=crop&q=80",
-    logoSize: 72, // 3x3 cm ~ 72-80px
     textColor: "#f1f5f9",
     numberColor: "#00f2fe",
-    rainbowBorder: true,
   });
 
-  // --- Core State Data (Persistent with localStorage) ---
+  // --- Core State Data (LocalStorage Persistent) ---
   const [products, setProducts] = useState<Product[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [sales, setSales] = useState<SaleRecord[]>([]);
@@ -193,8 +188,7 @@ export default function PhaengsonePOS() {
   // Reports Filter
   const [reportFilter, setReportFilter] = useState<"day" | "week" | "month" | "year">("day");
 
-  // File Upload Ref for Logo
-  const logoInputRef = useRef<HTMLInputElement>(null);
+  // Cash Input Ref
   const cashInputRef = useRef<HTMLInputElement>(null);
 
   // --- Dark Mode SweetAlert2 Helper ---
@@ -210,7 +204,6 @@ export default function PhaengsonePOS() {
 
   // --- 1. Load & Initialize LocalStorage Data ---
   useEffect(() => {
-    // ໂຫຼດຂໍ້ມູນຈາກ localStorage
     const savedProducts = localStorage.getItem("phaengsone_products");
     const savedMembers = localStorage.getItem("phaengsone_members");
     const savedSales = localStorage.getItem("phaengsone_sales");
@@ -220,7 +213,6 @@ export default function PhaengsonePOS() {
     if (savedProducts) {
       setProducts(JSON.parse(savedProducts));
     } else {
-      // ຂໍ້ມູນເລີ່ມຕົ້ນຕົວຢ່າງ
       const initialProducts: Product[] = [
         {
           id: "P001",
@@ -280,7 +272,15 @@ export default function PhaengsonePOS() {
 
     if (savedSales) setSales(JSON.parse(savedSales));
     if (savedStockIns) setStockIns(JSON.parse(savedStockIns));
-    if (savedSettings) setSettings(JSON.parse(savedSettings));
+
+    if (savedSettings) {
+      const parsed = JSON.parse(savedSettings);
+      // ອັບເດດຊື່ຮ້ານໃໝ່ໃຫ້ຕົງກັບທີ່ລະບຸ
+      setSettings({
+        ...parsed,
+        shopName: parsed.shopName || "ຮ້ານ ແພງສອນ ຂາຍ Online (ຍິນດີຕ້ອນຮັບ)",
+      });
+    }
   }, []);
 
   // Save to LocalStorage whenever state changes
@@ -308,13 +308,11 @@ export default function PhaengsonePOS() {
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
-      // ຮູບແບບເວລາ: 01:01:59
       const hours = String(now.getHours()).padStart(2, "0");
       const minutes = String(now.getMinutes()).padStart(2, "0");
       const seconds = String(now.getSeconds()).padStart(2, "0");
       setCurrentTime(`${hours}:${minutes}:${seconds}`);
 
-      // ຮູບແບບວັນທີພາສາລາວເຕັມ: ວັນຈັນ ທີ 19 ສິງຫາ 2026
       const laoDays = [
         "ວັນອາທິດ",
         "ວັນຈັນ",
@@ -341,7 +339,7 @@ export default function PhaengsonePOS() {
       const dayName = laoDays[now.getDay()];
       const day = now.getDate();
       const monthName = laoMonths[now.getMonth()];
-      const year = now.getFullYear(); // ຄ.ສ.
+      const year = now.getFullYear();
       setCurrentLaoDate(`${dayName} ທີ ${day} ${monthName} ${year}`);
     };
 
@@ -395,7 +393,6 @@ export default function PhaengsonePOS() {
   };
 
   // --- 5. POS Functionalities ---
-  // ຄິດໄລ່ຍອດລວມໃນກະຕ່າ
   const cartTotal = useMemo(() => {
     return cart.reduce((sum, item) => sum + item.subtotal, 0);
   }, [cart]);
@@ -404,13 +401,11 @@ export default function PhaengsonePOS() {
     return cart.reduce((sum, item) => sum + item.product.costPrice * item.quantity, 0);
   }, [cart]);
 
-  // ເງິນທອນ Automatic
   const changeAmount = useMemo(() => {
     if (cashReceived === "" || cashReceived < cartTotal) return 0;
     return Number(cashReceived) - cartTotal;
   }, [cashReceived, cartTotal]);
 
-  // ເພີ່ມສິນຄ້າເຂົ້າກະຕ່າ
   const addToCart = (product: Product, priceType: "normal" | "promo" | "agent" = "normal") => {
     if (product.stock <= 0) {
       Toast.fire({
@@ -463,7 +458,6 @@ export default function PhaengsonePOS() {
     });
   };
 
-  // ປັບປ່ຽນຈຳນວນໃນກະຕ່າ
   const updateCartQuantity = (index: number, newQty: number) => {
     if (newQty <= 0) {
       removeFromCart(index);
@@ -491,28 +485,10 @@ export default function PhaengsonePOS() {
     );
   };
 
-  // ປັບປ່ຽນລາຄາໜ້າຂາຍ (Price Tier ຫຼື Custom)
-  const changeItemPrice = (index: number, newPrice: number, priceType?: "normal" | "promo" | "agent") => {
-    setCart((prev) =>
-      prev.map((it, idx) =>
-        idx === index
-          ? {
-              ...it,
-              priceType: priceType || it.priceType,
-              unitPrice: newPrice,
-              subtotal: it.quantity * newPrice,
-            }
-          : it
-      )
-    );
-  };
-
-  // ລົບສິນຄ້າອອກຈາກກະຕ່າ
   const removeFromCart = (index: number) => {
     setCart((prev) => prev.filter((_, idx) => idx !== index));
   };
 
-  // ຢືນຢັນການຊຳລະເງິນ
   const handleCheckout = () => {
     if (cart.length === 0) {
       Toast.fire({ icon: "warning", title: "ກະຕ່າວ່າງເປົ່າ!", text: "ກະລຸນາເລືອກສິນຄ້າກ່ອນ." });
@@ -582,7 +558,6 @@ export default function PhaengsonePOS() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (activeTab !== "pos") return;
 
-      // Spacebar: ເມື່ອບໍ່ໄດ້ຢູ່ໃນ Input ອື່ນ ໃຫ້ໃສ່ເງິນພໍດີ
       if (e.code === "Space" && document.activeElement?.tagName !== "INPUT") {
         e.preventDefault();
         if (cartTotal > 0) {
@@ -596,7 +571,6 @@ export default function PhaengsonePOS() {
         }
       }
 
-      // Enter: ຊຳລະເງິນທັນທີ
       if (e.key === "Enter" && cartTotal > 0 && Number(cashReceived) >= cartTotal) {
         e.preventDefault();
         handleCheckout();
@@ -617,7 +591,6 @@ export default function PhaengsonePOS() {
         : value,
     }));
 
-    // Check duplicate ID
     if (name === "id" && !isEditingProduct) {
       const exists = products.some((p) => p.id.toLowerCase() === value.trim().toLowerCase());
       setProductIdDuplicateError(exists && value.trim() !== "");
@@ -645,7 +618,6 @@ export default function PhaengsonePOS() {
       Toast.fire({ icon: "success", title: "ເພີ່ມສິນຄ້າໃໝ່ສຳເລັດ!" });
     }
 
-    // Reset Form
     setProductForm({
       id: "",
       name: "",
@@ -734,7 +706,7 @@ export default function PhaengsonePOS() {
     });
   };
 
-  // --- 8. Admin Panel: Stock In System (ລະບົບຮັບສິນຄ້າເຂົ້າຄັງ) ---
+  // --- 8. Admin Panel: Stock In System ---
   const handleStockInSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!stockInForm.productId || stockInForm.quantity <= 0) {
@@ -745,7 +717,6 @@ export default function PhaengsonePOS() {
     const targetProduct = products.find((p) => p.id === stockInForm.productId);
     if (!targetProduct) return;
 
-    // ອັບເດດຈຳນວນສະຕ໊ອກສິນຄ້າ
     setProducts((prev) =>
       prev.map((p) =>
         p.id === stockInForm.productId
@@ -754,7 +725,6 @@ export default function PhaengsonePOS() {
       )
     );
 
-    // ບັນທຶກປະຫວັດຮັບສິນຄ້າ
     const newStockIn: StockInRecord = {
       id: `STK-${Date.now().toString().slice(-6)}`,
       date: new Date().toLocaleDateString("lo-LA"),
@@ -773,32 +743,13 @@ export default function PhaengsonePOS() {
     setStockInForm({ productId: "", quantity: 0, note: "ຮັບເຂົ້າປະຈຳວັນ" });
   };
 
-  // --- 9. Logo Change Trigger ---
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          setSettings((prev) => ({
-            ...prev,
-            logoUrl: event.target!.result as string,
-          }));
-          Toast.fire({ icon: "success", title: "ປ່ຽນໂລໂກ້ຮ້ານສຳເລັດແລ້ວ! 🏪" });
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // --- 10. Dashboard Calculations & Charts ---
+  // --- 9. Dashboard Calculations & Charts ---
   const dashboardStats = useMemo(() => {
     const totalStock = products.reduce((sum, p) => sum + p.stock, 0);
     const totalCostOfStock = products.reduce((sum, p) => sum + p.costPrice * p.stock, 0);
     const totalRevenue = sales.reduce((sum, s) => sum + s.totalAmount, 0);
     const totalProfit = sales.reduce((sum, s) => sum + s.profit, 0);
 
-    // ຍອດຂາຍມື້ນີ້
     const todayStr = new Date().toLocaleDateString("lo-LA");
     const todaySales = sales
       .filter((s) => s.date.includes(todayStr) || new Date(s.timestamp).toDateString() === new Date().toDateString())
@@ -868,7 +819,7 @@ export default function PhaengsonePOS() {
     };
   }, [products]);
 
-  // --- 11. Reports & Exports (CSV / Excel & PDF Print) ---
+  // --- 10. Reports & Exports ---
   const filteredReports = useMemo(() => {
     const now = new Date();
     return sales.filter((s) => {
@@ -886,7 +837,6 @@ export default function PhaengsonePOS() {
     });
   }, [sales, reportFilter]);
 
-  // 3 ອັນດັບສິນຄ້າຂາຍດີ
   const topProducts = useMemo(() => {
     const map: Record<string, { name: string; qty: number; revenue: number }> = {};
     sales.forEach((s) => {
@@ -904,14 +854,13 @@ export default function PhaengsonePOS() {
       .slice(0, 3);
   }, [sales]);
 
-  // Export to CSV/Excel
   const handleExportCSV = () => {
     if (sales.length === 0) {
       Toast.fire({ icon: "info", title: "ຍັງບໍ່ມີຂໍ້ມູນການຂາຍເພື່ອດາວໂຫຼດ" });
       return;
     }
 
-    let csvContent = "\uFEFF"; // UTF-8 BOM ສຳລັບພາສາລາວ
+    let csvContent = "\uFEFF";
     csvContent += "ເລກທີບິນ,ວັນທີ,ລູກຄ້າ,ຍອດຂາຍລວມ,ຕົ້ນທຶນລວມ,ກຳໄລ,ເງິນຮັບມາ,ເງິນທອນ\n";
 
     sales.forEach((s) => {
@@ -930,7 +879,6 @@ export default function PhaengsonePOS() {
     Toast.fire({ icon: "success", title: "ດາວໂຫຼດໄຟລ໌ Excel/CSV ສຳເລັດແລ້ວ! 📊" });
   };
 
-  // Export to PDF / Print Report
   const handleExportPDF = () => {
     window.print();
   };
@@ -939,7 +887,7 @@ export default function PhaengsonePOS() {
     <>
       <Head>
         <title>{settings.shopName} - POS Online System</title>
-        <meta name="description" content="ລະບົບຂາຍໜ້າຮ້ານ POS ຮ້ານ ແພງສອນ ຂາຍ Online" />
+        <meta name="description" content="ລະບົບຂາຍໜ້າຮ້ານ POS ຮ້ານ ແພງສອນ ຂາຍ Online (ຍິນດີຕ້ອນຮັບ)" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
@@ -947,48 +895,30 @@ export default function PhaengsonePOS() {
         className="min-h-screen flex flex-col md:flex-row bg-[#0b1120] text-slate-100 selection:bg-cyan-500 selection:text-black"
         style={{ color: settings.textColor }}
       >
-        {/* --- Hidden File Input for Logo Upload --- */}
-        <input
-          type="file"
-          ref={logoInputRef}
-          onChange={handleLogoUpload}
-          accept="image/*"
-          className="hidden"
-        />
-
         {/* ========================================================================= */}
         {/* SIDEBAR NAVIGATION                                                        */}
         {/* ========================================================================= */}
         <aside className="w-full md:w-64 bg-slate-900/80 backdrop-blur-xl border-b md:border-b-0 md:border-r border-slate-800 flex flex-col justify-between p-4 z-20">
           <div>
-            {/* Logo & Store Branding (Top-Left) */}
-            <div className="flex items-center space-x-3 mb-6 p-2 rounded-xl bg-slate-800/40 border border-slate-700/50">
-              <div
-                onClick={() => logoInputRef.current?.click()}
-                title="ຄລິກເພື່ອປ່ຽນຮູບ Logo ຮ້ານ"
-                className={`cursor-pointer overflow-hidden rounded-2xl border-4 transition-all duration-300 transform hover:scale-105 ${
-                  settings.rainbowBorder ? "animate-rainbow-glow" : "border-cyan-400 shadow-lg shadow-cyan-500/30"
-                }`}
-                style={{ width: `${settings.logoSize}px`, height: `${settings.logoSize}px` }}
-              >
-                <img
-                  src={settings.logoUrl}
-                  alt="Shop Logo"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="flex-1 overflow-hidden">
-                <h1 className="font-bold text-sm md:text-base text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 truncate">
-                  {settings.shopName}
-                </h1>
-                <span className="inline-flex items-center text-xs text-emerald-400 font-medium mt-0.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping mr-1.5" />
-                  ລະບົບພ້ອມໃຊ້ງານ
-                </span>
+            {/* Store Header Banner */}
+            <div className="mb-6 p-3.5 rounded-2xl bg-gradient-to-r from-slate-900/90 to-slate-800/50 border border-slate-700/60 shadow-lg">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.3)] shrink-0">
+                  <Store className="w-5 h-5" />
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  <h1 className="font-bold text-xs md:text-sm text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 truncate leading-tight">
+                    {settings.shopName}
+                  </h1>
+                  <span className="inline-flex items-center text-[11px] text-emerald-400 font-medium mt-0.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping mr-1.5" />
+                    ລະບົບພ້ອມໃຊ້ງານ
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* Nav Menu */}
+            {/* Nav Menu Items */}
             <nav className="space-y-1.5 font-medium">
               <button
                 onClick={() => setActiveTab("dashboard")}
@@ -1102,7 +1032,7 @@ export default function PhaengsonePOS() {
                 <div className="glass-panel p-6 rounded-3xl relative overflow-hidden bg-gradient-to-r from-slate-900 via-slate-900/90 to-cyan-950/40 border border-slate-700/60 shadow-xl">
                   <div className="relative z-10">
                     <h2 className="text-xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-300 to-indigo-400">
-                      ຍິນດີຕ້ອນຮັບສູ່ {settings.shopName} 🏪
+                      {settings.shopName} 🏪
                     </h2>
                     <p className="text-slate-400 mt-1 text-sm md:text-base">
                       ລະບົບຄຸ້ມຄອງການຂາຍ, ສະຕ໊ອກສິນຄ້າ ແລະ ລາຍງານຍອດຂາຍແບບ Real-time ຄົບວົງຈອນ.
@@ -2065,22 +1995,6 @@ export default function PhaengsonePOS() {
                     />
                   </div>
 
-                  {/* Logo Settings */}
-                  <div className="flex items-center justify-between p-3 bg-slate-900/60 rounded-xl border border-slate-800">
-                    <div>
-                      <p className="text-xs font-semibold text-slate-200">ຂອບຮູບສີຮຸ້ງປ່ຽນສີ (Rainbow Border)</p>
-                      <p className="text-[11px] text-slate-500">ອະນິເມຊັນຂອບໂລໂກ້ປ່ຽນສີທຸກໆ 10 ວິນາທີ</p>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={settings.rainbowBorder}
-                      onChange={(e) =>
-                        setSettings((prev) => ({ ...prev, rainbowBorder: e.target.checked }))
-                      }
-                      className="w-5 h-5 accent-cyan-400 cursor-pointer"
-                    />
-                  </div>
-
                   {/* Color Adjustments */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -2202,3 +2116,4 @@ export default function PhaengsonePOS() {
     </>
   );
 }
+```
