@@ -1,6 +1,3 @@
-ນີ້ແມ່ນໂຄ້ດ **`src/pages/index.tsx` ສະບັບເຕັມ 100%** ທີ່ໄດ້ອັບເດດຊື່ຮ້ານເປັນ **"ຮ້ານ ແພງສອນ ຂາຍ Online (ຍິນດີຕ້ອນຮັບ)"** ໃນທຸກໆຈຸດຂອງລະບົບ (ຫົວເວັບ, Sidebar, ແຜງຄວບຄຸມ Dashboard, ໃບບິນ Receipt, ແລະ ໜ້າການຕັ້ງຄ່າ):
-
-```tsx
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import Head from "next/head";
 import Swal from "sweetalert2";
@@ -2116,4 +2113,3 @@ export default function PhaengsonePOS() {
     </>
   );
 }
-```
